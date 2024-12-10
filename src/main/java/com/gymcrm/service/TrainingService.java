@@ -32,39 +32,30 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 
   @Override
   public void createTraining(CreateTrainingCommand command) {
-    logger.info("Attempting to create training with name: {}", command.getTrainingName());
+    logger.debug("Creating training with name: {}", command.getTrainingName());
     if (command.getTrainingName() == null || command.getTrainingName().isEmpty()) {
       throw new IllegalArgumentException("Training name cannot be null or empty.");
     }
     Training training = trainingFactory.createFrom(command);
     updateTrainingPort.saveOrUpdate(training);
-    logger.info("Training created successfully with ID: {}", training.getId());
   }
 
   @Override
   public List<Training> getAllTrainings() {
-    logger.info("Fetching all trainings.");
-    List<Training> trainings = loadTrainingPort.fetchAll();
-    if (trainings.isEmpty()) {
-      logger.warn("No trainings found.");
-    } else {
-      logger.info("Found {} trainings.", trainings.size());
-    }
-    return trainings;
+    logger.debug("Fetching all trainings.");
+    return loadTrainingPort.fetchAll();
   }
 
   @Override
   public Training getTrainingById(UUID trainingId) {
-    logger.info("Fetching training with ID: {}", trainingId);
     if (trainingId == null) {
       throw new IllegalArgumentException("Training ID cannot be null.");
     }
+    logger.debug("Fetching training with ID: {}", trainingId);
     Training training = loadTrainingPort.fetchById(trainingId);
     if (training == null) {
-      logger.error("Training not found with ID: {}", trainingId);
       throw new IllegalArgumentException("Training not found with ID: " + trainingId);
     }
-    logger.info("Training fetched successfully: {}", training);
     return training;
   }
 }

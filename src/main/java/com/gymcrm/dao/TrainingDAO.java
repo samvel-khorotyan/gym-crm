@@ -1,5 +1,6 @@
 package com.gymcrm.dao;
 
+import com.gymcrm.common.ApplicationProperties;
 import com.gymcrm.domain.Training;
 import com.gymcrm.util.SerializationUtil;
 import java.io.BufferedWriter;
@@ -11,48 +12,51 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class TrainingDAO extends GenericDAO<Training>
     implements UpdateTrainingPort, LoadTrainingPort {
   private static final Logger logger = LoggerFactory.getLogger(TrainingDAO.class);
-  private final String trainingFilePath;
+
+  private final ApplicationProperties applicationProperties;
 
   @Autowired
-  public TrainingDAO(
-      Storage storage, @Value("${storage.data.training.file}") String trainingFilePath) {
+  public TrainingDAO(Storage storage, ApplicationProperties applicationProperties) {
     super(storage, Training.class);
-    this.trainingFilePath = trainingFilePath;
+    this.applicationProperties = applicationProperties;
   }
 
   @Override
   public void saveOrUpdate(Training training) {
-    logger.info("Saving or updating training with ID: {}", training.getId());
+    logger.debug("Attempting to save or update training with ID: {}", training.getId());
     super.saveOrUpdate(training);
-    writeTrainingsToFile();
+    try {
+      writeTrainingsToFile();
+    } catch (IllegalStateException e) {
+      logger.warn("Error while saving training to file: {}", e.getMessage());
+    }
   }
 
   @Override
   public List<Training> fetchAll() {
-    logger.info("Fetching all trainings.");
+    logger.debug("Fetching all trainings.");
     return getAllTrainings();
   }
 
   @Override
   public Training fetchById(UUID id) {
-    logger.info("Fetching training with ID: {}", id);
+    logger.debug("Fetching training with ID: {}", id);
     Training training = (Training) super.storage.get(id);
     if (training == null) {
-      logger.warn("Training with ID: {} not found.", id);
+      logger.info("Training with ID: {} not found.", id);
     }
     return training;
   }
 
   private void writeTrainingsToFile() {
-    File tempFile = new File(trainingFilePath + ".tmp");
-    File originalFile = new File(trainingFilePath);
+    File tempFile = new File(applicationProperties.getTrainingFilePath() + ".tmp");
+    File originalFile = new File(applicationProperties.getTrainingFilePath());
 
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile, false))) {
       List<Training> trainings = getAllTrainings();
@@ -63,16 +67,14 @@ public class TrainingDAO extends GenericDAO<Training>
       }
 
       if (originalFile.exists() && !originalFile.delete()) {
-        throw new IOException("Failed to delete the original file: " + trainingFilePath);
+        throw new IOException("Failed to delete the original file.");
       }
       if (!tempFile.renameTo(originalFile)) {
-        throw new IOException("Failed to rename temp file to original file: " + trainingFilePath);
+        throw new IOException("Failed to rename temp file to original file.");
       }
-
-      logger.info("Trainings written to file successfully.");
     } catch (IOException e) {
-      logger.error("Error writing trainings to file", e);
-      throw new IllegalStateException("Error writing trainings to file: " + trainingFilePath, e);
+      logger.error("Error writing trainings to file: {}", e.getMessage());
+      throw new IllegalStateException("Error writing trainings to file.", e);
     }
   }
 

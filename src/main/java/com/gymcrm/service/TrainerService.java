@@ -36,44 +36,40 @@ public class TrainerService
   @Override
   public void createTrainer(CreateTrainerCommand command) {
     if (command.getSpecialization() == null) {
-      throw new IllegalArgumentException("Trainer or specialization cannot be null.");
+      throw new IllegalArgumentException("Specialization cannot be null.");
     }
 
     Trainer trainer = trainerFactory.createFrom(command);
 
-    logger.info("Creating trainer with ID: {}", trainer.getId());
+    logger.debug("Creating trainer with ID: {}", trainer.getId());
     updateTrainerPort.saveOrUpdate(trainer);
-    logger.info("Trainer created successfully: {}", trainer);
   }
 
   @Override
   public List<Trainer> getAllTrainers() {
-    logger.info("Fetching all trainers.");
-    List<Trainer> trainers = loadTrainerPort.fetchAll();
-    logger.info("Found {} trainers.", trainers.size());
-    return trainers;
+    logger.debug("Fetching all trainers.");
+    return loadTrainerPort.fetchAll();
   }
 
   @Override
   public Trainer getTrainerById(UUID id) {
-    logger.info("Fetching trainer with ID: {}", id);
     if (id == null) {
       throw new IllegalArgumentException("ID cannot be null.");
     }
+    logger.debug("Fetching trainer with ID: {}", id);
     Trainer trainer = loadTrainerPort.fetchById(id);
     if (trainer == null) {
       throw new IllegalArgumentException("Trainer not found with ID: " + id);
     }
-    logger.info("Trainer fetched successfully: {}", trainer);
     return trainer;
   }
 
   @Override
   public void updateTrainer(UpdateTrainerCommand command) {
-    logger.info("Updating trainer with ID: {}", command.getTrainerId());
     if (command.getTrainerId() == null) {
-      throw new IllegalArgumentException("ID and Trainer cannot be null.");
+      throw new IllegalArgumentException("ID cannot be null.");
     }
+    logger.debug("Updating trainer with ID: {}", command.getTrainerId());
 
     Trainer existingTrainer = loadTrainerPort.fetchById(command.getTrainerId());
     if (existingTrainer == null) {
@@ -82,6 +78,5 @@ public class TrainerService
 
     existingTrainer.setSpecialization(command.getSpecialization());
     updateTrainerPort.saveOrUpdate(existingTrainer);
-    logger.info("Trainer updated successfully: {}", existingTrainer);
   }
 }

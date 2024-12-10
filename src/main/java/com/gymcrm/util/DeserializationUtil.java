@@ -4,12 +4,8 @@ import com.gymcrm.domain.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DeserializationUtil {
-  private static final Logger logger = LoggerFactory.getLogger(DeserializationUtil.class);
-
   private static final int TRAINEE_FIELD_COUNT = 4;
   private static final int TRAINER_FIELD_COUNT = 3;
   private static final int TRAINING_FIELD_COUNT = 7;
@@ -28,7 +24,6 @@ public class DeserializationUtil {
       trainee.setUserId(UUID.fromString(fields[3]));
       return trainee;
     } catch (IllegalArgumentException | DateTimeParseException e) {
-      logger.error("Error deserializing Trainee: {}", line, e);
       throw new IllegalArgumentException("Failed to deserialize Trainee: " + line, e);
     }
   }
@@ -42,7 +37,6 @@ public class DeserializationUtil {
       trainer.setUserId(UUID.fromString(fields[2]));
       return trainer;
     } catch (IllegalArgumentException e) {
-      logger.error("Error deserializing Trainer: {}", line, e);
       throw new IllegalArgumentException("Failed to deserialize Trainer: " + line, e);
     }
   }
@@ -60,7 +54,6 @@ public class DeserializationUtil {
       training.setTrainingDuration(Integer.parseInt(fields[6]));
       return training;
     } catch (IllegalArgumentException | DateTimeParseException e) {
-      logger.error("Error deserializing Training: {}", line, e);
       throw new IllegalArgumentException("Failed to deserialize Training: " + line, e);
     }
   }

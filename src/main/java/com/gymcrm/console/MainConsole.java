@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class MainConsole {
   private static final Logger logger = LoggerFactory.getLogger(MainConsole.class);
+
   private static final Map<Integer, String> MENU_OPTIONS = new LinkedHashMap<>();
 
   static {
@@ -85,7 +86,6 @@ public class MainConsole {
     try {
       return Integer.parseInt(scanner.nextLine());
     } catch (NumberFormatException e) {
-      logger.error("Invalid menu option selected.");
       System.out.println("Invalid input. Please enter a number.");
       return -1;
     }
@@ -111,7 +111,7 @@ public class MainConsole {
       CRMFacadeService.addTraineeWithUser(command);
       System.out.println("Trainee created successfully!");
     } catch (Exception e) {
-      logger.error("Failed to create trainee.", e);
+      logger.warn("Error while creating trainee: {}", e.getMessage());
       System.out.println("An error occurred while creating trainee. Please try again.");
     }
   }
@@ -130,11 +130,8 @@ public class MainConsole {
       } else {
         System.out.println("Trainee not found with the provided ID.");
       }
-    } catch (IllegalArgumentException e) {
-      logger.error("Invalid UUID format.", e);
-      System.out.println("Invalid UUID format. Please try again.");
     } catch (Exception e) {
-      logger.error("Failed to select trainee.", e);
+      logger.warn("Error while selecting trainee: {}", e.getMessage());
       System.out.println("An error occurred. Please try again.");
     }
   }
@@ -159,7 +156,7 @@ public class MainConsole {
       CRMFacadeService.modifyTrainee(command);
       System.out.println("Trainee updated successfully!");
     } catch (Exception e) {
-      logger.error("Failed to update trainee.", e);
+      logger.warn("Error while updating trainee: {}", e.getMessage());
       System.out.println("An error occurred while updating trainee. Please try again.");
     }
   }
@@ -174,7 +171,7 @@ public class MainConsole {
       CRMFacadeService.removeTrainee(id);
       System.out.println("Trainee deleted successfully!");
     } catch (Exception e) {
-      logger.error("Failed to delete trainee.", e);
+      logger.warn("Error while deleting trainee: {}", e.getMessage());
       System.out.println("An error occurred while deleting trainee. Please try again.");
     }
   }
@@ -196,7 +193,7 @@ public class MainConsole {
       CRMFacadeService.addTrainerWithUser(command);
       System.out.println("Trainer created successfully!");
     } catch (Exception e) {
-      logger.error("Failed to create trainer.", e);
+      logger.warn("Error while creating trainer: {}", e.getMessage());
       System.out.println("An error occurred while creating trainer. Please try again.");
     }
   }
@@ -215,11 +212,8 @@ public class MainConsole {
       } else {
         System.out.println("Trainer not found with the provided ID.");
       }
-    } catch (IllegalArgumentException e) {
-      logger.error("Invalid UUID format.", e);
-      System.out.println("Invalid UUID format. Please try again.");
     } catch (Exception e) {
-      logger.error("Failed to select trainer.", e);
+      logger.warn("Error while selecting trainer: {}", e.getMessage());
       System.out.println("An error occurred. Please try again.");
     }
   }
@@ -241,7 +235,7 @@ public class MainConsole {
       CRMFacadeService.modifyTrainer(command);
       System.out.println("Trainer updated successfully!");
     } catch (Exception e) {
-      logger.error("Failed to update trainer.", e);
+      logger.warn("Error while updating trainer: {}", e.getMessage());
       System.out.println("An error occurred while updating trainer. Please try again.");
     }
   }
@@ -276,7 +270,7 @@ public class MainConsole {
       CRMFacadeService.addTraining(command);
       System.out.println("Training created successfully!");
     } catch (Exception e) {
-      logger.error("Failed to create training.", e);
+      logger.warn("Error while creating training: {}", e.getMessage());
       System.out.println("An error occurred while creating training. Please try again.");
     }
   }
@@ -295,11 +289,8 @@ public class MainConsole {
       } else {
         System.out.println("Training not found with the provided ID.");
       }
-    } catch (IllegalArgumentException e) {
-      logger.error("Invalid UUID format.", e);
-      System.out.println("Invalid UUID format. Please try again.");
     } catch (Exception e) {
-      logger.error("Failed to select training.", e);
+      logger.warn("Error while selecting training: {}", e.getMessage());
       System.out.println("An error occurred. Please try again.");
     }
   }

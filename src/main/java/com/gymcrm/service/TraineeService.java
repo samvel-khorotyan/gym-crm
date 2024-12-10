@@ -31,39 +31,35 @@ public class TraineeService
 
   @Override
   public void createTrainee(Trainee trainee) {
-    logger.info("Creating new trainee with ID: {}", trainee.getId());
+    logger.debug("Creating new trainee with ID: {}", trainee.getId());
     updateTraineePort.saveOrUpdate(trainee);
-    logger.info("Trainee created successfully: {}", trainee);
   }
 
   @Override
   public List<Trainee> getAllTrainees() {
-    logger.info("Fetching all trainees.");
-    List<Trainee> trainees = loadTraineePort.fetchAll();
-    logger.info("Found {} trainees.", trainees.size());
-    return trainees;
+    logger.debug("Fetching all trainees.");
+    return loadTraineePort.fetchAll();
   }
 
   @Override
   public Trainee getTraineeById(UUID id) {
-    logger.info("Fetching trainee with ID: {}", id);
     if (id == null) {
       throw new IllegalArgumentException("ID cannot be null.");
     }
+    logger.debug("Fetching trainee with ID: {}", id);
     Trainee trainee = loadTraineePort.fetchById(id);
     if (trainee == null) {
       throw new IllegalArgumentException("Trainee not found with ID: " + id);
     }
-    logger.info("Trainee fetched successfully: {}", trainee);
     return trainee;
   }
 
   @Override
   public void updateTrainee(UpdateTraineeCommand command) {
-    logger.info("Updating trainee with ID: {}", command.getTraineeId());
     if (command.getTraineeId() == null) {
       throw new IllegalArgumentException("ID cannot be null.");
     }
+    logger.debug("Updating trainee with ID: {}", command.getTraineeId());
 
     Trainee existingTrainee = loadTraineePort.fetchById(command.getTraineeId());
     if (existingTrainee == null) {
@@ -73,15 +69,14 @@ public class TraineeService
     existingTrainee.setAddress(command.getAddress());
     existingTrainee.setDateOfBirth(command.getDateOfBirth());
     updateTraineePort.saveOrUpdate(existingTrainee);
-    logger.info("Trainee updated successfully: {}", existingTrainee);
   }
 
   @Override
   public void removeTrainee(UUID id) {
-    logger.info("Deleting trainee with ID: {}", id);
     if (id == null) {
       throw new IllegalArgumentException("ID cannot be null.");
     }
+    logger.debug("Deleting trainee with ID: {}", id);
 
     Trainee trainee = loadTraineePort.fetchById(id);
     if (trainee == null) {
@@ -89,6 +84,5 @@ public class TraineeService
     }
 
     updateTraineePort.removeById(id);
-    logger.info("Trainee deleted successfully: {}", id);
   }
 }

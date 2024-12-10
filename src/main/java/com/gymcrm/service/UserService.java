@@ -21,20 +21,16 @@ public class UserService implements UserCreationUseCase {
 
   @Override
   public User createUser(CreateUserCommand command) {
-    logger.info("Starting user creation process");
+    logger.debug("Validating user creation command");
 
     if (command.getFirstName() == null
         || command.getFirstName().isBlank()
         || command.getLastName() == null
         || command.getLastName().isBlank()) {
-      logger.error("Invalid input: first name or last name is null/empty");
       throw new IllegalArgumentException("First name and last name cannot be null or empty");
     }
 
-    User user = userFactory.createFrom(command);
-
-    logger.info(
-        "User created successfully with ID: {} and username: {}", user.getId(), user.getUsername());
-    return user;
+    logger.debug("Creating user for: {} {}", command.getFirstName(), command.getLastName());
+    return userFactory.createFrom(command);
   }
 }

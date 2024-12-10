@@ -14,6 +14,10 @@ public class NamespaceUtil {
           Trainer.class, "trainer",
           Training.class, "training");
 
+  private NamespaceUtil() {
+    // Utility class; prevent instantiation
+  }
+
   public static String getNamespace(Class<?> clazz) {
     return Optional.ofNullable(NAMESPACE_MAP.get(clazz))
         .orElseThrow(
