@@ -1,10 +1,10 @@
 package com.gymcrm.service;
 
-import com.gymcrm.domain.Trainee;
+import com.gymcrm.command.UpdateTraineeCommand;
 import java.util.UUID;
 
 public interface TraineeUpdateUseCase {
-  void updateTrainee(UUID userId, Trainee trainee);
+  void updateTrainee(UpdateTraineeCommand command);
 
   void removeTrainee(UUID id);
 }

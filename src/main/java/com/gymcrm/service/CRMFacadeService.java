@@ -1,8 +1,10 @@
 package com.gymcrm.service;
 
+import com.gymcrm.command.*;
 import com.gymcrm.domain.Trainee;
 import com.gymcrm.domain.Trainer;
 import com.gymcrm.domain.Training;
+import com.gymcrm.factory.TraineeFactory;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -23,6 +25,7 @@ public class CRMFacadeService {
   private final TrainingCreationUseCase trainingCreationService;
   private final LoadTrainingUseCase trainingSelectionService;
   private UserCreationUseCase userGenerationService;
+  private final TraineeFactory traineeFactory;
 
   @Autowired
   public CRMFacadeService(
@@ -30,12 +33,14 @@ public class CRMFacadeService {
       TraineeUpdateUseCase traineeUpdateService,
       LoadTraineeUseCase traineeSelectionService,
       TrainingCreationUseCase trainingCreationService,
-      LoadTrainingUseCase trainingSelectionService) {
+      LoadTrainingUseCase trainingSelectionService,
+      TraineeFactory traineeFactory) {
     this.traineeCreationService = traineeCreationService;
     this.traineeUpdateService = traineeUpdateService;
     this.traineeSelectionService = traineeSelectionService;
     this.trainingCreationService = trainingCreationService;
     this.trainingSelectionService = trainingSelectionService;
+    this.traineeFactory = traineeFactory;
   }
 
   @Autowired
@@ -58,11 +63,14 @@ public class CRMFacadeService {
     this.userGenerationService = userGenerationService;
   }
 
-  public void addTraineeWithUser(String firstName, String lastName, Trainee trainee) {
-    LOGGER.info("Adding trainee with user: {} {}", firstName, lastName);
-    var user = userGenerationService.createUser(firstName, lastName);
-    trainee.setUserId(user.getId());
-    traineeCreationService.createTrainee(trainee);
+  public void addTraineeWithUser(CreateTraineeCommand command) {
+    LOGGER.info(
+        "Adding trainee with user: {} {}", command.getUserFirstName(), command.getUserLastName());
+    var user =
+        userGenerationService.createUser(
+            new CreateUserCommand(command.getUserFirstName(), command.getUserLastName()));
+    command.setUserId(user.getId());
+    traineeCreationService.createTrainee(traineeFactory.createFrom(command));
     LOGGER.info("Trainee added successfully with username: {}", user.getUsername());
   }
 
@@ -76,9 +84,9 @@ public class CRMFacadeService {
     return traineeSelectionService.getTraineeById(traineeId);
   }
 
-  public void modifyTrainee(UUID traineeId, Trainee updatedTrainee) {
-    LOGGER.info("Updating trainee with ID: {}", traineeId);
-    traineeUpdateService.updateTrainee(traineeId, updatedTrainee);
+  public void modifyTrainee(UpdateTraineeCommand command) {
+    LOGGER.info("Updating trainee with ID: {}", command.getTraineeId());
+    traineeUpdateService.updateTrainee(command);
     LOGGER.info("Trainee updated successfully");
   }
 
@@ -88,11 +96,14 @@ public class CRMFacadeService {
     LOGGER.info("Trainee removed successfully");
   }
 
-  public void addTrainerWithUser(String firstName, String lastName, Trainer trainer) {
-    LOGGER.info("Adding trainer with user: {} {}", firstName, lastName);
-    var user = userGenerationService.createUser(firstName, lastName);
-    trainer.setUserId(user.getId());
-    trainerCreationService.createTrainer(trainer);
+  public void addTrainerWithUser(CreateTrainerCommand command) {
+    LOGGER.info(
+        "Adding trainer with user: {} {}", command.getUserFirstName(), command.getUserLastName());
+    var user =
+        userGenerationService.createUser(
+            new CreateUserCommand(command.getUserFirstName(), command.getUserLastName()));
+    command.setUserId(user.getId());
+    trainerCreationService.createTrainer(command);
     LOGGER.info("Trainer added successfully with username: {}", user.getUsername());
   }
 
@@ -106,15 +117,15 @@ public class CRMFacadeService {
     return trainerSelectionService.getTrainerById(trainerId);
   }
 
-  public void modifyTrainer(UUID trainerId, Trainer updatedTrainer) {
-    LOGGER.info("Updating trainer with ID: {}", trainerId);
-    trainerUpdateService.updateTrainer(trainerId, updatedTrainer);
+  public void modifyTrainer(UpdateTrainerCommand command) {
+    LOGGER.info("Updating trainer with ID: {}", command.getTrainerId());
+    trainerUpdateService.updateTrainer(command);
     LOGGER.info("Trainer updated successfully");
   }
 
-  public void addTraining(Training training) {
-    LOGGER.info("Adding training: {}", training.getTrainingName());
-    trainingCreationService.createTraining(training);
+  public void addTraining(CreateTrainingCommand command) {
+    LOGGER.info("Adding training: {}", command.getTrainingName());
+    trainingCreationService.createTraining(command);
     LOGGER.info("Training added successfully");
   }
 

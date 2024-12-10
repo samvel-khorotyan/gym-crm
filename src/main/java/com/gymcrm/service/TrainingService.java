@@ -1,8 +1,10 @@
 package com.gymcrm.service;
 
+import com.gymcrm.command.CreateTrainingCommand;
 import com.gymcrm.dao.LoadTrainingPort;
 import com.gymcrm.dao.UpdateTrainingPort;
 import com.gymcrm.domain.Training;
+import com.gymcrm.factory.TrainingFactory;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -16,19 +18,25 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 
   private final UpdateTrainingPort updateTrainingPort;
   private final LoadTrainingPort loadTrainingPort;
+  private final TrainingFactory trainingFactory;
 
   @Autowired
-  public TrainingService(UpdateTrainingPort updateTrainingPort, LoadTrainingPort loadTrainingPort) {
+  public TrainingService(
+      UpdateTrainingPort updateTrainingPort,
+      LoadTrainingPort loadTrainingPort,
+      TrainingFactory trainingFactory) {
     this.updateTrainingPort = updateTrainingPort;
     this.loadTrainingPort = loadTrainingPort;
+    this.trainingFactory = trainingFactory;
   }
 
   @Override
-  public void createTraining(Training training) {
-    logger.info("Attempting to create training with name: {}", training.getTrainingName());
-    if (training.getTrainingName() == null || training.getTrainingName().isEmpty()) {
+  public void createTraining(CreateTrainingCommand command) {
+    logger.info("Attempting to create training with name: {}", command.getTrainingName());
+    if (command.getTrainingName() == null || command.getTrainingName().isEmpty()) {
       throw new IllegalArgumentException("Training name cannot be null or empty.");
     }
+    Training training = trainingFactory.createFrom(command);
     updateTrainingPort.saveOrUpdate(training);
     logger.info("Training created successfully with ID: {}", training.getId());
   }

@@ -1,8 +1,7 @@
 package com.gymcrm.service;
 
-import com.gymcrm.domain.Trainer;
-import java.util.UUID;
+import com.gymcrm.command.UpdateTrainerCommand;
 
 public interface TrainerUpdateUseCase {
-  void updateTrainer(UUID id, Trainer updatedTrainer);
+  void updateTrainer(UpdateTrainerCommand command);
 }

@@ -1,11 +1,8 @@
 package com.gymcrm.console;
 
-import com.gymcrm.domain.Trainee;
-import com.gymcrm.domain.Trainer;
-import com.gymcrm.domain.Training;
+import com.gymcrm.command.*;
 import com.gymcrm.domain.TrainingType;
 import com.gymcrm.service.CRMFacadeService;
-import com.gymcrm.util.UUIDGeneratorInterface;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -37,16 +34,10 @@ public class MainConsole {
   }
 
   private CRMFacadeService CRMFacadeService;
-  private UUIDGeneratorInterface uuidGeneratorInterface;
 
   @Autowired
   public void setFacadeService(CRMFacadeService CRMFacadeService) {
     this.CRMFacadeService = CRMFacadeService;
-  }
-
-  @Autowired
-  public void setUuidGeneratorInterface(UUIDGeneratorInterface uuidGeneratorInterface) {
-    this.uuidGeneratorInterface = uuidGeneratorInterface;
   }
 
   public static void main(String[] args) {
@@ -107,16 +98,17 @@ public class MainConsole {
       System.out.print("Enter Trainee Date of Birth (YYYY-MM-DD): ");
       LocalDate dob = LocalDate.parse(scanner.nextLine());
       System.out.print("Enter User's First Name: ");
-      String firstName = scanner.nextLine();
+      String userFirstName = scanner.nextLine();
       System.out.print("Enter User's Last Name: ");
-      String lastName = scanner.nextLine();
+      String userLastName = scanner.nextLine();
 
-      Trainee trainee = new Trainee();
-      trainee.setId(uuidGeneratorInterface.newUUID());
-      trainee.setAddress(address);
-      trainee.setDateOfBirth(dob);
+      CreateTraineeCommand command = new CreateTraineeCommand();
+      command.setAddress(address);
+      command.setDateOfBirth(dob);
+      command.setUserFirstName(userFirstName);
+      command.setUserLastName(userLastName);
 
-      CRMFacadeService.addTraineeWithUser(firstName, lastName, trainee);
+      CRMFacadeService.addTraineeWithUser(command);
       System.out.println("Trainee created successfully!");
     } catch (Exception e) {
       logger.error("Failed to create trainee.", e);
@@ -159,11 +151,12 @@ public class MainConsole {
       System.out.print("Enter Trainee ID: ");
       UUID id = UUID.fromString(scanner.nextLine());
 
-      Trainee trainee = new Trainee();
-      trainee.setAddress(address);
-      trainee.setDateOfBirth(dob);
+      UpdateTraineeCommand command = new UpdateTraineeCommand();
+      command.setTraineeId(id);
+      command.setDateOfBirth(dob);
+      command.setAddress(address);
 
-      CRMFacadeService.modifyTrainee(id, trainee);
+      CRMFacadeService.modifyTrainee(command);
       System.out.println("Trainee updated successfully!");
     } catch (Exception e) {
       logger.error("Failed to update trainee.", e);
@@ -191,15 +184,16 @@ public class MainConsole {
       System.out.print("Enter Trainer Specialization: ");
       String specialization = scanner.nextLine();
       System.out.print("Enter User's First Name: ");
-      String firstName = scanner.nextLine();
+      String userFirstName = scanner.nextLine();
       System.out.print("Enter User's Last Name: ");
-      String lastName = scanner.nextLine();
+      String userLastName = scanner.nextLine();
 
-      Trainer trainer = new Trainer();
-      trainer.setId(uuidGeneratorInterface.newUUID());
-      trainer.setSpecialization(specialization);
+      CreateTrainerCommand command = new CreateTrainerCommand();
+      command.setSpecialization(specialization);
+      command.setUserFirstName(userFirstName);
+      command.setUserLastName(userLastName);
 
-      CRMFacadeService.addTrainerWithUser(firstName, lastName, trainer);
+      CRMFacadeService.addTrainerWithUser(command);
       System.out.println("Trainer created successfully!");
     } catch (Exception e) {
       logger.error("Failed to create trainer.", e);
@@ -240,10 +234,11 @@ public class MainConsole {
       System.out.print("Enter Trainer ID: ");
       UUID id = UUID.fromString(scanner.nextLine());
 
-      Trainer trainer = new Trainer();
-      trainer.setSpecialization(specialization);
+      UpdateTrainerCommand command = new UpdateTrainerCommand();
+      command.setTrainerId(id);
+      command.setSpecialization(specialization);
 
-      CRMFacadeService.modifyTrainer(id, trainer);
+      CRMFacadeService.modifyTrainer(command);
       System.out.println("Trainer updated successfully!");
     } catch (Exception e) {
       logger.error("Failed to update trainer.", e);
@@ -264,22 +259,21 @@ public class MainConsole {
       System.out.print("Enter Training Name: ");
       String trainingName = scanner.nextLine();
       System.out.print("Enter Training Type: ");
-      TrainingType trainingType = TrainingType.valueOf(scanner.nextLine());
+      TrainingType trainingType = TrainingType.valueOf(scanner.nextLine().toUpperCase());
       System.out.print("Enter Training Date (YYYY-MM-DD): ");
       LocalDate trainingDate = LocalDate.parse(scanner.nextLine());
       System.out.print("Enter Training Duration (in minutes): ");
       int trainingDuration = Integer.parseInt(scanner.nextLine());
 
-      Training training = new Training();
-      training.setId(uuidGeneratorInterface.newUUID());
-      training.setTraineeId(traineeId);
-      training.setTrainerId(trainerId);
-      training.setTrainingName(trainingName);
-      training.setTrainingType(trainingType);
-      training.setTrainingDate(trainingDate);
-      training.setTrainingDuration(trainingDuration);
+      CreateTrainingCommand command = new CreateTrainingCommand();
+      command.setTraineeId(traineeId);
+      command.setTrainerId(trainerId);
+      command.setTrainingName(trainingName);
+      command.setTrainingType(trainingType);
+      command.setTrainingDate(trainingDate);
+      command.setTrainingDuration(trainingDuration);
 
-      CRMFacadeService.addTraining(training);
+      CRMFacadeService.addTraining(command);
       System.out.println("Training created successfully!");
     } catch (Exception e) {
       logger.error("Failed to create training.", e);

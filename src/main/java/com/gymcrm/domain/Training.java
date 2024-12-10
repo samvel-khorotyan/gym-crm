@@ -2,11 +2,13 @@ package com.gymcrm.domain;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Training implements CRMEntity {
   private UUID id;
   private UUID traineeId;
@@ -14,7 +16,7 @@ public class Training implements CRMEntity {
   private String trainingName;
   private TrainingType trainingType;
   private LocalDate trainingDate;
-  private int trainingDuration;
+  private Integer trainingDuration;
 
   @Override
   public UUID getId() {

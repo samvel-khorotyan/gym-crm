@@ -20,8 +20,7 @@ public class UserUtil {
   }
 
   public static String generatePassword() {
-    return RandomStringUtils.randomAlphanumeric(
-        12);
+    return RandomStringUtils.randomAlphanumeric(12);
   }
 
   private static void validateName(String name, String fieldName) {

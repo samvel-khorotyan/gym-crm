@@ -1,7 +1,7 @@
 package com.gymcrm.service;
 
-import com.gymcrm.domain.Training;
+import com.gymcrm.command.CreateTrainingCommand;
 
 public interface TrainingCreationUseCase {
-  void createTraining(Training training);
+  void createTraining(CreateTrainingCommand command);
 }

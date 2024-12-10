@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 @Getter
 @Component
 public class ApplicationProperties {
-
   @Value("${storage.data.trainee.file}")
   private String traineeFilePath;
 

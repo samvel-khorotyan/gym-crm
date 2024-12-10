@@ -1,5 +1,6 @@
 package com.gymcrm.service;
 
+import com.gymcrm.command.UpdateTraineeCommand;
 import com.gymcrm.dao.LoadTraineePort;
 import com.gymcrm.dao.UpdateTraineePort;
 import com.gymcrm.domain.Trainee;
@@ -58,19 +59,19 @@ public class TraineeService
   }
 
   @Override
-  public void updateTrainee(UUID id, Trainee trainee) {
-    logger.info("Updating trainee with ID: {}", id);
-    if (id == null || trainee == null) {
-      throw new IllegalArgumentException("ID and Trainee cannot be null.");
+  public void updateTrainee(UpdateTraineeCommand command) {
+    logger.info("Updating trainee with ID: {}", command.getTraineeId());
+    if (command.getTraineeId() == null) {
+      throw new IllegalArgumentException("ID cannot be null.");
     }
 
-    Trainee existingTrainee = loadTraineePort.fetchById(id);
+    Trainee existingTrainee = loadTraineePort.fetchById(command.getTraineeId());
     if (existingTrainee == null) {
-      throw new IllegalArgumentException("Trainee not found with ID: " + id);
+      throw new IllegalArgumentException("Trainee not found with ID: " + command.getTraineeId());
     }
 
-    existingTrainee.setAddress(trainee.getAddress());
-    existingTrainee.setDateOfBirth(trainee.getDateOfBirth());
+    existingTrainee.setAddress(command.getAddress());
+    existingTrainee.setDateOfBirth(command.getDateOfBirth());
     updateTraineePort.saveOrUpdate(existingTrainee);
     logger.info("Trainee updated successfully: {}", existingTrainee);
   }
