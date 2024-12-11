@@ -14,10 +14,19 @@ public class TraineeFactory {
   }
 
   public Trainee createFrom(CreateTraineeCommand command) {
-    return new Trainee(
-        uuidGeneratorInterface.newUUID(),
-        command.getDateOfBirth(),
-        command.getAddress(),
-        command.getUserId());
+    Trainee trainee =
+        new Trainee(
+            uuidGeneratorInterface.newUUID(),
+            command.getDateOfBirth(),
+            command.getAddress(),
+            command.getUserId());
+
+    trainee.setFirstName(command.getUserFirstName());
+    trainee.setLastName(command.getUserLastName());
+    trainee.setUsername(command.getUsername());
+    trainee.setPassword(command.getPassword());
+    trainee.setIsActive(command.getIsActive());
+
+    return trainee;
   }
 }

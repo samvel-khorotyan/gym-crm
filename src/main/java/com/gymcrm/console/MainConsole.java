@@ -119,7 +119,7 @@ public class MainConsole {
   private void selectTrainee(Scanner scanner) {
     try {
       System.out.println("Available Trainee IDs:");
-      CRMFacadeService.listAllTrainees().forEach(trainee -> System.out.println(trainee.getId()));
+      CRMFacadeService.listAllTrainees().forEach(System.out::println);
 
       System.out.print("Enter Trainee ID: ");
       UUID id = UUID.fromString(scanner.nextLine().trim());
@@ -164,7 +164,7 @@ public class MainConsole {
   private void deleteTrainee(Scanner scanner) {
     try {
       System.out.println("Available Trainee IDs:");
-      CRMFacadeService.listAllTrainees().forEach(trainee -> System.out.println(trainee.getId()));
+      CRMFacadeService.listAllTrainees().forEach(System.out::println);
       System.out.print("Enter Trainee ID to delete: ");
       UUID id = UUID.fromString(scanner.nextLine().trim());
 
@@ -201,7 +201,7 @@ public class MainConsole {
   private void selectTrainer(Scanner scanner) {
     try {
       System.out.println("Available Trainer IDs:");
-      CRMFacadeService.listAllTrainers().forEach(trainer -> System.out.println(trainer.getId()));
+      CRMFacadeService.listAllTrainers().forEach(System.out::println);
 
       System.out.print("Enter Trainer ID: ");
       UUID id = UUID.fromString(scanner.nextLine().trim());
@@ -243,11 +243,11 @@ public class MainConsole {
   private void createTraining(Scanner scanner) {
     try {
       System.out.print("Choose Trainee ID: ");
-      CRMFacadeService.listAllTrainees().forEach(trainee -> System.out.println(trainee.getId()));
+      CRMFacadeService.listAllTrainees().forEach(System.out::println);
       System.out.print("Enter Trainee ID: ");
       UUID traineeId = UUID.fromString(scanner.nextLine());
       System.out.print("Choose Trainer ID: ");
-      CRMFacadeService.listAllTrainers().forEach(trainer -> System.out.println(trainer.getId()));
+      CRMFacadeService.listAllTrainers().forEach(System.out::println);
       System.out.print("Enter Trainer ID: ");
       UUID trainerId = UUID.fromString(scanner.nextLine());
       System.out.print("Enter Training Name: ");
@@ -278,7 +278,7 @@ public class MainConsole {
   private void selectTraining(Scanner scanner) {
     try {
       System.out.println("Available Training IDs:");
-      CRMFacadeService.listAllTrainings().forEach(training -> System.out.println(training.getId()));
+      CRMFacadeService.listAllTrainings().forEach(System.out::println);
 
       System.out.print("Enter Training ID: ");
       UUID id = UUID.fromString(scanner.nextLine().trim());

@@ -4,6 +4,7 @@ import com.gymcrm.command.*;
 import com.gymcrm.domain.Trainee;
 import com.gymcrm.domain.Trainer;
 import com.gymcrm.domain.Training;
+import com.gymcrm.domain.User;
 import com.gymcrm.factory.TraineeFactory;
 import java.util.List;
 import java.util.UUID;
@@ -68,7 +69,14 @@ public class CRMFacadeService {
     var user =
         userCreationUseCase.createUser(
             new CreateUserCommand(command.getUserFirstName(), command.getUserLastName()));
+
     command.setUserId(user.getId());
+    command.setUserFirstName(user.getFirstName());
+    command.setUserLastName(user.getLastName());
+    command.setUsername(user.getUsername());
+    command.setPassword(user.getPassword());
+    command.setIsActive(user.getIsActive());
+
     traineeCreationUseCase.createTrainee(traineeFactory.createFrom(command));
     logger.info("Trainee added successfully");
   }
@@ -97,10 +105,17 @@ public class CRMFacadeService {
 
   public void addTrainerWithUser(CreateTrainerCommand command) {
     logger.debug("Adding trainer: {} {}", command.getUserFirstName(), command.getUserLastName());
-    var user =
+    User user =
         userCreationUseCase.createUser(
             new CreateUserCommand(command.getUserFirstName(), command.getUserLastName()));
+
     command.setUserId(user.getId());
+    command.setUserFirstName(user.getFirstName());
+    command.setUserLastName(user.getLastName());
+    command.setUsername(user.getUsername());
+    command.setPassword(user.getPassword());
+    command.setIsActive(user.getIsActive());
+
     trainerCreationUseCase.createTrainer(command);
     logger.info("Trainer added successfully");
   }

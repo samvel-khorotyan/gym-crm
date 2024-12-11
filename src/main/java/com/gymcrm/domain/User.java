@@ -1,20 +1,24 @@
 package com.gymcrm.domain;
 
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Setter
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class User implements CRMEntity {
   private UUID id;
-  private String firstName;
-  private String lastName;
-  private String username;
-  private String password;
-  private Boolean isActive;
+  String firstName;
+  String lastName;
+  String username;
+  String password;
+  Boolean isActive;
+
+  public User(String username, String password) {
+    this.username = username;
+    this.password = password;
+  }
 
   @Override
   public UUID getId() {

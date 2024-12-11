@@ -11,4 +11,7 @@ public class CreateTrainerCommand {
   String userFirstName;
   String userLastName;
   UUID userId;
+  String username;
+  String password;
+  Boolean isActive;
 }

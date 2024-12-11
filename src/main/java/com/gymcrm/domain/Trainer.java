@@ -1,14 +1,13 @@
 package com.gymcrm.domain;
 
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Setter
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Trainer implements CRMEntity {
+public class Trainer extends User {
   private UUID id;
   private String specialization;
   private UUID userId;
@@ -21,5 +20,33 @@ public class Trainer implements CRMEntity {
   @Override
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public String toString() {
+    return "Trainer{"
+        + "id="
+        + id
+        + ", specialization="
+        + specialization
+        + ", userId='"
+        + userId
+        + '\''
+        + ", firstName="
+        + firstName
+        + '\''
+        + ", lastName="
+        + lastName
+        + '\''
+        + ", username="
+        + username
+        + '\''
+        + ", password="
+        + password
+        + '\''
+        + ", isActive="
+        + isActive
+        + '\''
+        + '}';
   }
 }

@@ -14,7 +14,16 @@ public class TrainerFactory {
   }
 
   public Trainer createFrom(CreateTrainerCommand command) {
-    return new Trainer(
-        uuidGeneratorInterface.newUUID(), command.getSpecialization(), command.getUserId());
+    Trainer trainer =
+        new Trainer(
+            uuidGeneratorInterface.newUUID(), command.getSpecialization(), command.getUserId());
+
+    trainer.setFirstName(command.getUserFirstName());
+    trainer.setLastName(command.getUserLastName());
+    trainer.setUsername(command.getUsername());
+    trainer.setPassword(command.getPassword());
+    trainer.setIsActive(command.getIsActive());
+
+    return trainer;
   }
 }
