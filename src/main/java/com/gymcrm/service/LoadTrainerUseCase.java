@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface LoadTrainerUseCase {
-  Trainer getTrainerById(UUID userId);
+  Trainer getTrainerById(UUID id);
 
   List<Trainer> getAllTrainers();
 }

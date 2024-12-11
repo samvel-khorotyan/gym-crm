@@ -16,124 +16,124 @@ import org.springframework.stereotype.Service;
 public class CRMFacadeService {
   private static final Logger logger = LoggerFactory.getLogger(CRMFacadeService.class);
 
-  private final TraineeCreationUseCase traineeCreationService;
-  private final TraineeUpdateUseCase traineeUpdateService;
-  private final LoadTraineeUseCase traineeSelectionService;
-  private TrainerCreationUseCase trainerCreationService;
-  private LoadTrainerUseCase trainerSelectionService;
-  private TrainerUpdateUseCase trainerUpdateService;
-  private final TrainingCreationUseCase trainingCreationService;
-  private final LoadTrainingUseCase trainingSelectionService;
-  private UserCreationUseCase userGenerationService;
+  private final TraineeCreationUseCase traineeCreationUseCase;
+  private final TraineeUpdateUseCase traineeUpdateUseCase;
+  private final LoadTraineeUseCase toadTraineeUseCase;
+  private TrainerCreationUseCase trainerCreationUseCase;
+  private LoadTrainerUseCase loadTrainerUseCase;
+  private TrainerUpdateUseCase trainerUpdateUseCase;
+  private final TrainingCreationUseCase trainingCreationUseCase;
+  private final LoadTrainingUseCase loadTrainingUseCase;
+  private UserCreationUseCase userCreationUseCase;
   private final TraineeFactory traineeFactory;
 
   @Autowired
   public CRMFacadeService(
-      TraineeCreationUseCase traineeCreationService,
-      TraineeUpdateUseCase traineeUpdateService,
-      LoadTraineeUseCase traineeSelectionService,
-      TrainingCreationUseCase trainingCreationService,
-      LoadTrainingUseCase trainingSelectionService,
+      TraineeCreationUseCase traineeCreationUseCase,
+      TraineeUpdateUseCase traineeUpdateUseCase,
+      LoadTraineeUseCase toadTraineeUseCase,
+      TrainingCreationUseCase trainingCreationUseCase,
+      LoadTrainingUseCase loadTrainingUseCase,
       TraineeFactory traineeFactory) {
-    this.traineeCreationService = traineeCreationService;
-    this.traineeUpdateService = traineeUpdateService;
-    this.traineeSelectionService = traineeSelectionService;
-    this.trainingCreationService = trainingCreationService;
-    this.trainingSelectionService = trainingSelectionService;
+    this.traineeCreationUseCase = traineeCreationUseCase;
+    this.traineeUpdateUseCase = traineeUpdateUseCase;
+    this.toadTraineeUseCase = toadTraineeUseCase;
+    this.trainingCreationUseCase = trainingCreationUseCase;
+    this.loadTrainingUseCase = loadTrainingUseCase;
     this.traineeFactory = traineeFactory;
   }
 
   @Autowired
-  public void setTrainerCreationService(TrainerCreationUseCase trainerCreationService) {
-    this.trainerCreationService = trainerCreationService;
+  public void setTrainerCreationUseCase(TrainerCreationUseCase trainerCreationUseCase) {
+    this.trainerCreationUseCase = trainerCreationUseCase;
   }
 
   @Autowired
-  public void setTrainerSelectionService(LoadTrainerUseCase trainerSelectionService) {
-    this.trainerSelectionService = trainerSelectionService;
+  public void setLoadTrainerUseCase(LoadTrainerUseCase loadTrainerUseCase) {
+    this.loadTrainerUseCase = loadTrainerUseCase;
   }
 
   @Autowired
-  public void setTrainerUpdateService(TrainerUpdateUseCase trainerUpdateService) {
-    this.trainerUpdateService = trainerUpdateService;
+  public void setTrainerUpdateUseCase(TrainerUpdateUseCase trainerUpdateUseCase) {
+    this.trainerUpdateUseCase = trainerUpdateUseCase;
   }
 
   @Autowired
-  public void setUserGenerationService(UserCreationUseCase userGenerationService) {
-    this.userGenerationService = userGenerationService;
+  public void setUserCreationUseCase(UserCreationUseCase userCreationUseCase) {
+    this.userCreationUseCase = userCreationUseCase;
   }
 
   public void addTraineeWithUser(CreateTraineeCommand command) {
     logger.debug("Adding trainee: {} {}", command.getUserFirstName(), command.getUserLastName());
     var user =
-        userGenerationService.createUser(
+        userCreationUseCase.createUser(
             new CreateUserCommand(command.getUserFirstName(), command.getUserLastName()));
     command.setUserId(user.getId());
-    traineeCreationService.createTrainee(traineeFactory.createFrom(command));
+    traineeCreationUseCase.createTrainee(traineeFactory.createFrom(command));
     logger.info("Trainee added successfully");
   }
 
   public List<Trainee> listAllTrainees() {
     logger.debug("Fetching all trainees");
-    return traineeSelectionService.getAllTrainees();
+    return toadTraineeUseCase.getAllTrainees();
   }
 
   public Trainee getTraineeById(UUID traineeId) {
     logger.debug("Fetching trainee by ID: {}", traineeId);
-    return traineeSelectionService.getTraineeById(traineeId);
+    return toadTraineeUseCase.getTraineeById(traineeId);
   }
 
   public void modifyTrainee(UpdateTraineeCommand command) {
     logger.debug("Updating trainee with ID: {}", command.getTraineeId());
-    traineeUpdateService.updateTrainee(command);
+    traineeUpdateUseCase.updateTrainee(command);
     logger.info("Trainee updated successfully");
   }
 
   public void removeTrainee(UUID traineeId) {
     logger.debug("Removing trainee with ID: {}", traineeId);
-    traineeUpdateService.removeTrainee(traineeId);
+    traineeUpdateUseCase.removeTrainee(traineeId);
     logger.info("Trainee removed successfully");
   }
 
   public void addTrainerWithUser(CreateTrainerCommand command) {
     logger.debug("Adding trainer: {} {}", command.getUserFirstName(), command.getUserLastName());
     var user =
-        userGenerationService.createUser(
+        userCreationUseCase.createUser(
             new CreateUserCommand(command.getUserFirstName(), command.getUserLastName()));
     command.setUserId(user.getId());
-    trainerCreationService.createTrainer(command);
+    trainerCreationUseCase.createTrainer(command);
     logger.info("Trainer added successfully");
   }
 
   public List<Trainer> listAllTrainers() {
     logger.debug("Fetching all trainers");
-    return trainerSelectionService.getAllTrainers();
+    return loadTrainerUseCase.getAllTrainers();
   }
 
   public Trainer getTrainerById(UUID trainerId) {
     logger.debug("Fetching trainer by ID: {}", trainerId);
-    return trainerSelectionService.getTrainerById(trainerId);
+    return loadTrainerUseCase.getTrainerById(trainerId);
   }
 
   public void modifyTrainer(UpdateTrainerCommand command) {
     logger.debug("Updating trainer with ID: {}", command.getTrainerId());
-    trainerUpdateService.updateTrainer(command);
+    trainerUpdateUseCase.updateTrainer(command);
     logger.info("Trainer updated successfully");
   }
 
   public void addTraining(CreateTrainingCommand command) {
     logger.debug("Adding training: {}", command.getTrainingName());
-    trainingCreationService.createTraining(command);
+    trainingCreationUseCase.createTraining(command);
     logger.info("Training added successfully");
   }
 
   public List<Training> listAllTrainings() {
     logger.debug("Fetching all trainings");
-    return trainingSelectionService.getAllTrainings();
+    return loadTrainingUseCase.getAllTrainings();
   }
 
   public Training getTrainingById(UUID trainingId) {
     logger.debug("Fetching training by ID: {}", trainingId);
-    return trainingSelectionService.getTrainingById(trainingId);
+    return loadTrainingUseCase.getTrainingById(trainingId);
   }
 }
