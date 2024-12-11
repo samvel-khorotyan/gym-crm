@@ -1,4 +1,4 @@
-package com.gymcrm.dao;
+package com.gymcrm.prot;
 
 import com.gymcrm.domain.Training;
 

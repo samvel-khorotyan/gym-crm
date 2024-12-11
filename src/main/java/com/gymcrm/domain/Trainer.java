@@ -33,19 +33,19 @@ public class Trainer extends User {
         + userId
         + '\''
         + ", firstName="
-        + firstName
+        + getFirstName()
         + '\''
         + ", lastName="
-        + lastName
+        + getLastName()
         + '\''
         + ", username="
-        + username
+        + getUsername()
         + '\''
         + ", password="
-        + password
+        + getPassword()
         + '\''
         + ", isActive="
-        + isActive
+        + getIsActive()
         + '\''
         + '}';
   }

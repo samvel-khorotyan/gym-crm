@@ -1,4 +1,4 @@
-package com.gymcrm.service;
+package com.gymcrm.usecase;
 
 import com.gymcrm.command.CreateUserCommand;
 import com.gymcrm.domain.User;

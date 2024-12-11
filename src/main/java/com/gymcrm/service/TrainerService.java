@@ -2,10 +2,13 @@ package com.gymcrm.service;
 
 import com.gymcrm.command.CreateTrainerCommand;
 import com.gymcrm.command.UpdateTrainerCommand;
-import com.gymcrm.dao.LoadTrainerPort;
-import com.gymcrm.dao.UpdateTrainerPort;
 import com.gymcrm.domain.Trainer;
 import com.gymcrm.factory.TrainerFactory;
+import com.gymcrm.prot.LoadTrainerPort;
+import com.gymcrm.prot.UpdateTrainerPort;
+import com.gymcrm.usecase.LoadTrainerUseCase;
+import com.gymcrm.usecase.TrainerCreationUseCase;
+import com.gymcrm.usecase.TrainerUpdateUseCase;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;

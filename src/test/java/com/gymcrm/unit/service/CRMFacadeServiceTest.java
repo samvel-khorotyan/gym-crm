@@ -7,6 +7,7 @@ import com.gymcrm.command.*;
 import com.gymcrm.domain.*;
 import com.gymcrm.factory.TraineeFactory;
 import com.gymcrm.service.*;
+import com.gymcrm.usecase.*;
 import java.time.LocalDate;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;

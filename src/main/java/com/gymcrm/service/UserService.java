@@ -3,6 +3,7 @@ package com.gymcrm.service;
 import com.gymcrm.command.CreateUserCommand;
 import com.gymcrm.domain.User;
 import com.gymcrm.factory.UserFactory;
+import com.gymcrm.usecase.UserCreationUseCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

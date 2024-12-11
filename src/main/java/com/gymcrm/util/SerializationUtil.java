@@ -12,12 +12,22 @@ public class SerializationUtil {
     validateNotNull(trainee.getDateOfBirth(), "Trainee Date of Birth");
     validateNotNull(trainee.getAddress(), "Trainee Address");
     validateNotNull(trainee.getUserId(), "Trainee User ID");
+    validateNotNull(trainee.getFirstName(), "Trainee User Firs tName");
+    validateNotNull(trainee.getLastName(), "Trainee User Last Name");
+    validateNotNull(trainee.getUsername(), "Trainee User Username");
+    validateNotNull(trainee.getPassword(), "Trainee User Password");
+    validateNotNull(trainee.getIsActive(), "Trainee User Is Active");
 
     return joinFields(
         trainee.getId().toString(),
         trainee.getDateOfBirth().toString(),
         trainee.getAddress(),
-        trainee.getUserId().toString());
+        trainee.getUserId().toString(),
+        trainee.getFirstName(),
+        trainee.getLastName(),
+        trainee.getUsername(),
+        trainee.getPassword(),
+        trainee.getIsActive().toString());
   }
 
   public static String serializeTrainer(Trainer trainer) {
@@ -25,9 +35,21 @@ public class SerializationUtil {
     validateNotNull(trainer.getId(), "Trainer ID");
     validateNotNull(trainer.getSpecialization(), "Trainer Specialization");
     validateNotNull(trainer.getUserId(), "Trainer User ID");
+    validateNotNull(trainer.getFirstName(), "Trainer User Firs tName");
+    validateNotNull(trainer.getLastName(), "Trainer User Last Name");
+    validateNotNull(trainer.getUsername(), "Trainer User Username");
+    validateNotNull(trainer.getPassword(), "Trainer User Password");
+    validateNotNull(trainer.getIsActive(), "Trainer User Is Active");
 
     return joinFields(
-        trainer.getId().toString(), trainer.getSpecialization(), trainer.getUserId().toString());
+        trainer.getId().toString(),
+        trainer.getSpecialization(),
+        trainer.getUserId().toString(),
+        trainer.getFirstName(),
+        trainer.getLastName(),
+        trainer.getUsername(),
+        trainer.getPassword(),
+        trainer.getIsActive().toString());
   }
 
   public static String serializeTraining(Training training) {

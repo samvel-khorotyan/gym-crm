@@ -9,11 +9,11 @@ import lombok.*;
 @AllArgsConstructor
 public class User implements CRMEntity {
   private UUID id;
-  String firstName;
-  String lastName;
-  String username;
-  String password;
-  Boolean isActive;
+  private String firstName;
+  private String lastName;
+  private String username;
+  private String password;
+  private Boolean isActive;
 
   public User(String username, String password) {
     this.username = username;

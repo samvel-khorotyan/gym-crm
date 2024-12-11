@@ -1,4 +1,4 @@
-package com.gymcrm.dao;
+package com.gymcrm.prot;
 
 import java.util.List;
 import java.util.UUID;

@@ -1,6 +1,8 @@
 package com.gymcrm.dao;
 
 import com.gymcrm.domain.CRMEntity;
+import com.gymcrm.prot.LoadPort;
+import com.gymcrm.prot.UpdatePort;
 import com.gymcrm.util.NamespaceUtil;
 import java.util.List;
 import java.util.Map;

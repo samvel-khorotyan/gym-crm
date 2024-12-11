@@ -6,6 +6,7 @@ import com.gymcrm.domain.Trainer;
 import com.gymcrm.domain.Training;
 import com.gymcrm.domain.User;
 import com.gymcrm.factory.TraineeFactory;
+import com.gymcrm.usecase.*;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;

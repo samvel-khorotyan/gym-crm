@@ -6,8 +6,8 @@ import java.time.format.DateTimeParseException;
 import java.util.UUID;
 
 public class DeserializationUtil {
-  private static final int TRAINEE_FIELD_COUNT = 4;
-  private static final int TRAINER_FIELD_COUNT = 3;
+  private static final int TRAINEE_FIELD_COUNT = 9;
+  private static final int TRAINER_FIELD_COUNT = 8;
   private static final int TRAINING_FIELD_COUNT = 7;
 
   private DeserializationUtil() {
@@ -22,6 +22,11 @@ public class DeserializationUtil {
       trainee.setDateOfBirth(LocalDate.parse(fields[1]));
       trainee.setAddress(fields[2]);
       trainee.setUserId(UUID.fromString(fields[3]));
+      trainee.setFirstName(fields[4]);
+      trainee.setLastName(fields[5]);
+      trainee.setUsername(fields[6]);
+      trainee.setPassword(fields[7]);
+      trainee.setIsActive(Boolean.parseBoolean(fields[8]));
       return trainee;
     } catch (IllegalArgumentException | DateTimeParseException e) {
       throw new IllegalArgumentException("Failed to deserialize Trainee: " + line, e);
@@ -35,6 +40,11 @@ public class DeserializationUtil {
       trainer.setId(UUID.fromString(fields[0]));
       trainer.setSpecialization(fields[1]);
       trainer.setUserId(UUID.fromString(fields[2]));
+      trainer.setFirstName(fields[3]);
+      trainer.setLastName(fields[4]);
+      trainer.setUsername(fields[5]);
+      trainer.setPassword(fields[6]);
+      trainer.setIsActive(Boolean.parseBoolean(fields[7]));
       return trainer;
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Failed to deserialize Trainer: " + line, e);

@@ -1,4 +1,4 @@
-package com.gymcrm.service;
+package com.gymcrm.usecase;
 
 import com.gymcrm.domain.Trainee;
 import java.util.List;

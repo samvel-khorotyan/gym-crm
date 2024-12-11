@@ -1,9 +1,12 @@
 package com.gymcrm.service;
 
 import com.gymcrm.command.UpdateTraineeCommand;
-import com.gymcrm.dao.LoadTraineePort;
-import com.gymcrm.dao.UpdateTraineePort;
 import com.gymcrm.domain.Trainee;
+import com.gymcrm.prot.LoadTraineePort;
+import com.gymcrm.prot.UpdateTraineePort;
+import com.gymcrm.usecase.LoadTraineeUseCase;
+import com.gymcrm.usecase.TraineeCreationUseCase;
+import com.gymcrm.usecase.TraineeUpdateUseCase;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;

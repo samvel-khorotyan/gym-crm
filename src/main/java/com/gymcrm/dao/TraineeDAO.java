@@ -2,6 +2,8 @@ package com.gymcrm.dao;
 
 import com.gymcrm.common.ApplicationProperties;
 import com.gymcrm.domain.Trainee;
+import com.gymcrm.prot.LoadTraineePort;
+import com.gymcrm.prot.UpdateTraineePort;
 import com.gymcrm.util.SerializationUtil;
 import java.io.BufferedWriter;
 import java.io.File;
