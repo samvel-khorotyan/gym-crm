@@ -1,6 +1,6 @@
 # Gym CRM System
 
-A **Gym Customer Relationship Management (CRM)** system designed to manage **trainees**, **trainers**, and **trainings** efficiently. This project follows a modular design using Spring Framework, focusing on **clean architecture**, **testability**, and **extensibility**.
+A **Gym Customer Relationship Management (CRM)** system designed to manage **trainees**, **trainers**, and **trainings** efficiently. This project follows a modular design using the Spring Framework, focusing on **clean architecture**, **testability**, and **extensibility**.
 
 ---
 
@@ -15,6 +15,8 @@ A **Gym Customer Relationship Management (CRM)** system designed to manage **tra
 7. [API/Console Commands](#api-console-commands)
 8. [Testing](#testing)
 9. [Future Improvements](#future-improvements)
+10. [Contribution](#contribution)
+11. [License](#license)
 
 ---
 
@@ -32,7 +34,7 @@ This project is a **Java-based Gym CRM system** that provides functionalities fo
 
 - **CRUD Operations**:
   - Create, Read, Update, and Delete for Trainees, Trainers, and Trainings.
-  
+
 - **Spring-based Modular Architecture**:
   - Use cases are split into services with dependency injection for easy management and testability.
 
@@ -110,6 +112,23 @@ The system is structured following **clean architecture principles**:
      storage.data.training.file=/path/to/trainings.csv
      ```
 
+4. Ensure the following CSV file formats:
+
+   **Trainees.csv**:
+   ```csv
+   ID,DateOfBirth,Address,UserID,FirstName,LastName,Username,Password,IsActive
+   ```
+
+   **Trainers.csv**:
+   ```csv
+   ID,Specialization,UserID,FirstName,LastName,Username,Password,IsActive
+   ```
+
+   **Trainings.csv**:
+   ```csv
+   ID,TraineeID,TrainerID,TrainingName,TrainingType,TrainingDate,TrainingDuration
+   ```
+
 ---
 
 ## How to Run
@@ -137,6 +156,20 @@ The system is structured following **clean architecture principles**:
 - **9. Select Training**: View training details.
 - **10. Exit**: Exit the application.
 
+### Example Console Interaction
+
+```
+Welcome to Gym CRM Console:
+1. Create Trainee
+2. Select Trainee
+...
+Choose an option: 1
+Enter Trainee Address: 123 Main St
+Enter Trainee Date of Birth (YYYY-MM-DD): 1990-01-01
+...
+Trainee created successfully!
+```
+
 ---
 
 ## Testing
@@ -144,7 +177,7 @@ The system is structured following **clean architecture principles**:
 ### Unit Testing
 - **JUnit** is used to test service, utility, and DAO layers.
 - **Mockito** is used for mocking dependencies.
-  
+
 Run the tests:
 ```bash
 mvn test
@@ -155,6 +188,9 @@ mvn test
 ```bash
 mvn test jacoco:report
 ```
+
+### Example Coverage Report Output
+- **85% overall code coverage** achieved in the latest tests.
 
 ---
 
@@ -172,7 +208,10 @@ mvn test jacoco:report
 4. **Enhanced Security**:
    - Hash passwords and use secure storage for sensitive data.
 
-5. **Additional Features**:
+5. **Scalability**:
+   - Introduce multi-threaded support for handling concurrent operations.
+
+6. **Additional Features**:
    - Reporting, analytics, and notification systems.
 
 ---
@@ -186,6 +225,11 @@ Contributions are welcome! Please follow these steps:
 4. Push to your branch: `git push origin feature/your-feature`.
 5. Open a pull request.
 
+### Coding Standards
+- Follow standard Java naming conventions.
+- Ensure proper unit testing coverage for all new features.
+- Use meaningful commit messages.
+
 ---
 
 ## License
@@ -194,3 +238,11 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
+## Known Limitations
+
+- **File-based Storage**:
+  - Limited scalability for large datasets.
+- **Error Handling**:
+  - Basic error messages; improvements needed for detailed feedback.
+- **Concurrent Operations**:
+  - No support for multi-threaded operations at present.
