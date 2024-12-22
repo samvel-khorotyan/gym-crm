@@ -7,12 +7,27 @@ import org.springframework.stereotype.Component;
 @Getter
 @Component
 public class ApplicationProperties {
-  @Value("${storage.data.trainee.file}")
-  private String traineeFilePath;
+  @Value("${spring.datasource.driver-class-name}")
+  private String driverClassName;
 
-  @Value("${storage.data.trainer.file}")
-  private String trainerFilePath;
+  @Value("${spring.datasource.url}")
+  private String jdbcUrl;
 
-  @Value("${storage.data.training.file}")
-  private String trainingFilePath;
+  @Value("${spring.datasource.username}")
+  private String username;
+
+  @Value("${spring.datasource.password}")
+  private String password;
+
+  @Value("${spring.datasource.hikari.maximum-pool-size}")
+  private int maximumPoolSize;
+
+  @Value("${spring.datasource.hikari.minimum-idle}")
+  private int minimumIdle;
+
+  @Value("${spring.datasource.hikari.idle-timeout}")
+  private int idleTimeout;
+
+  @Value("${spring.datasource.hikari.connection-timeout}")
+  private int connectionTimeout;
 }

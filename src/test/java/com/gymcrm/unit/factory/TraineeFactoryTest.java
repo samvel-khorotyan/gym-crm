@@ -3,10 +3,11 @@ package com.gymcrm.unit.factory;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.gymcrm.command.CreateTraineeCommand;
-import com.gymcrm.domain.Trainee;
-import com.gymcrm.factory.TraineeFactory;
-import com.gymcrm.util.UUIDGeneratorInterface;
+import com.gymcrm.common.UUIDGeneratorInterface;
+import com.gymcrm.trainee.application.factory.TraineeFactory;
+import com.gymcrm.trainee.application.port.input.CreateTraineeCommand;
+import com.gymcrm.trainee.domain.Trainee;
+import com.gymcrm.user.domain.User;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -26,16 +27,10 @@ class TraineeFactoryTest {
     UUID generatedUUID = UUID.randomUUID();
     LocalDate dateOfBirth = LocalDate.of(2000, 1, 1);
     String address = "123 Main St";
-    String firstName = "John";
-    String lastName = "Doe";
     UUID userId = UUID.randomUUID();
 
-    CreateTraineeCommand command = new CreateTraineeCommand();
-    command.setAddress(address);
-    command.setDateOfBirth(dateOfBirth);
-    command.setUserFirstName(firstName);
-    command.setUserLastName(lastName);
-    command.setUserId(userId);
+    User user = new User(userId, "John", "Doe", "john.doe", "password123", true, null);
+    CreateTraineeCommand command = new CreateTraineeCommand(dateOfBirth, address, user);
 
     when(uuidGeneratorInterface.newUUID()).thenReturn(generatedUUID);
 
@@ -45,7 +40,7 @@ class TraineeFactoryTest {
     assertEquals(generatedUUID, trainee.getId(), "Trainee ID should match generated UUID");
     assertEquals(dateOfBirth, trainee.getDateOfBirth(), "Date of Birth should match command");
     assertEquals(address, trainee.getAddress(), "Address should match command");
-    assertEquals(userId, trainee.getUserId(), "User ID should match command");
+    assertEquals(user, trainee.getUser(), "User should match command");
 
     verify(uuidGeneratorInterface, times(1)).newUUID();
   }

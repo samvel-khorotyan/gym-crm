@@ -3,11 +3,13 @@ package com.gymcrm.unit.factory;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.gymcrm.command.CreateTrainingCommand;
-import com.gymcrm.domain.Training;
-import com.gymcrm.domain.TrainingType;
-import com.gymcrm.factory.TrainingFactory;
-import com.gymcrm.util.UUIDGeneratorInterface;
+import com.gymcrm.common.UUIDGeneratorInterface;
+import com.gymcrm.trainee.domain.Trainee;
+import com.gymcrm.trainer.domain.Trainer;
+import com.gymcrm.training.application.factory.TrainingFactory;
+import com.gymcrm.training.application.port.input.CreateTrainingCommand;
+import com.gymcrm.training.domain.Training;
+import com.gymcrm.trainingtype.domain.TrainingType;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -28,17 +30,16 @@ class TrainingFactoryTest {
     UUID traineeId = UUID.randomUUID();
     UUID trainerId = UUID.randomUUID();
     String trainingName = "Advanced Gym Techniques";
-    TrainingType trainingType = TrainingType.WEIGHTLIFTING;
+    TrainingType trainingType = new TrainingType(UUID.randomUUID(), "Weightlifting");
     LocalDate trainingDate = LocalDate.of(2023, 12, 1);
     Integer trainingDuration = 90;
 
-    CreateTrainingCommand command = new CreateTrainingCommand();
-    command.setTraineeId(traineeId);
-    command.setTrainerId(trainerId);
-    command.setTrainingName(trainingName);
-    command.setTrainingType(trainingType);
-    command.setTrainingDate(trainingDate);
-    command.setTrainingDuration(trainingDuration);
+    Trainee trainee = new Trainee(traineeId, LocalDate.of(2000, 1, 1), "123 Main St", null);
+    Trainer trainer = new Trainer(trainerId, "Fitness Specialist", null);
+
+    CreateTrainingCommand command =
+        new CreateTrainingCommand(
+            trainingName, trainee, trainer, trainingType, trainingDate, trainingDuration);
 
     when(uuidGeneratorInterface.newUUID()).thenReturn(generatedUUID);
 
@@ -46,8 +47,8 @@ class TrainingFactoryTest {
 
     assertNotNull(training, "Training object should not be null");
     assertEquals(generatedUUID, training.getId(), "Training ID should match generated UUID");
-    assertEquals(traineeId, training.getTraineeId(), "Trainee ID should match command");
-    assertEquals(trainerId, training.getTrainerId(), "Trainer ID should match command");
+    assertEquals(trainee, training.getTrainee(), "Trainee should match command");
+    assertEquals(trainer, training.getTrainer(), "Trainer should match command");
     assertEquals(trainingName, training.getTrainingName(), "Training name should match command");
     assertEquals(trainingType, training.getTrainingType(), "Training type should match command");
     assertEquals(trainingDate, training.getTrainingDate(), "Training date should match command");
