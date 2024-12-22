@@ -17,11 +17,10 @@ public class AuthenticationService implements AuthenticationUseCase {
   }
 
   @Override
-  public boolean authenticateTrainee(String username, String password) {
-    if (authenticationPort.userExistsByCredentials(username, password, UserType.TRAINEE))
-      return true;
+  public boolean authenticateAdmin(String username, String password) {
+    if (authenticationPort.userExistsByCredentials(username, password, UserType.ADMIN)) return true;
     throw new UnauthorizedException(
-        "Unauthorized access attempt for trainee with username: " + username);
+        "Unauthorized access attempt for admin with username: " + username);
   }
 
   @Override
@@ -33,9 +32,10 @@ public class AuthenticationService implements AuthenticationUseCase {
   }
 
   @Override
-  public boolean authenticateAdmin(String username, String password) {
-    if (authenticationPort.userExistsByCredentials(username, password, UserType.ADMIN)) return true;
+  public boolean authenticateTrainee(String username, String password) {
+    if (authenticationPort.userExistsByCredentials(username, password, UserType.TRAINEE))
+      return true;
     throw new UnauthorizedException(
-        "Unauthorized access attempt for admin with username: " + username);
+        "Unauthorized access attempt for trainee with username: " + username);
   }
 }

@@ -52,18 +52,37 @@ public class TrainerService
     Trainer trainer = trainerFactory.createFrom(command);
 
     logger.debug("Creating trainer with ID: {}", trainer.getId());
-    updateTrainerPort.save(trainer);
+    try {
+      updateTrainerPort.save(trainer);
+      logger.info("Trainer with ID: {} created successfully", trainer.getId());
+    } catch (Exception e) {
+      logger.error(
+          "Error creating trainer with ID: {}, Reason: {}", trainer.getId(), e.getMessage(), e);
+      throw new RuntimeException("Failed to create trainer", e);
+    }
   }
 
   @Override
   public List<Trainer> loadAll() {
     logger.debug("Fetching all trainers.");
-    return loadTrainerPort.findAll();
+    try {
+      return loadTrainerPort.findAll();
+    } catch (Exception e) {
+      logger.error("Error fetching all trainers, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainers", e);
+    }
   }
 
   @Override
   public List<Trainer> loadTrainersNotAssignedToTrainee(String trainerName) {
-    return loadTrainerPort.findTrainersNotAssignedToTrainee(trainerName);
+    logger.debug("Fetching trainers not assigned to trainee with name: {}", trainerName);
+    try {
+      return loadTrainerPort.findTrainersNotAssignedToTrainee(trainerName);
+    } catch (Exception e) {
+      logger.error(
+          "Error fetching trainers not assigned to trainee, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainers not assigned to trainee", e);
+    }
   }
 
   @Override
@@ -72,11 +91,12 @@ public class TrainerService
       throw new IllegalArgumentException("ID cannot be null.");
     }
     logger.debug("Fetching trainer with ID: {}", id);
-    Trainer trainer = loadTrainerPort.findById(id);
-    if (trainer == null) {
-      throw new IllegalArgumentException("Trainer not found with ID: " + id);
+    try {
+      return loadTrainerPort.findById(id);
+    } catch (Exception e) {
+      logger.error("Error fetching trainer with ID: {}, Reason: {}", id, e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainer by ID", e);
     }
-    return trainer;
   }
 
   @Override
@@ -86,34 +106,68 @@ public class TrainerService
     }
     logger.debug("Updating trainer with ID: {}", command.getTrainerId());
 
-    Trainer existingTrainer = loadTrainerPort.findById(command.getTrainerId());
-    if (existingTrainer == null) {
-      throw new IllegalArgumentException("Trainer not found with ID: " + command.getTrainerId());
+    try {
+      Trainer existingTrainer = loadTrainerPort.findById(command.getTrainerId());
+      existingTrainer.setSpecialization(command.getSpecialization());
+      updateTrainerPort.save(existingTrainer);
+      logger.info("Trainer with ID: {} updated successfully", command.getTrainerId());
+    } catch (Exception e) {
+      logger.error(
+          "Error updating trainer with ID: {}, Reason: {}",
+          command.getTrainerId(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainer", e);
     }
-
-    existingTrainer.setSpecialization(command.getSpecialization());
-    updateTrainerPort.save(existingTrainer);
   }
 
   @Override
   public void updatePassword(UpdateTrainerPasswordCommand command) {
-    authenticationUseCase.authenticateTrainer(command.getUsername(), command.getOldPassword());
-    User user = loadTrainerPort.findById(command.getTrainerId()).getUser();
-    user.setPassword(command.getNewPassword());
-    updateUserPort.save(user);
+    logger.debug("Updating password for trainer with username: {}", command.getUsername());
+    try {
+      authenticationUseCase.authenticateTrainer(command.getUsername(), command.getOldPassword());
+      User user = loadTrainerPort.findById(command.getTrainerId()).getUser();
+      user.setPassword(command.getNewPassword());
+      updateUserPort.save(user);
+      logger.info(
+          "Password updated successfully for trainer with username: {}", command.getUsername());
+    } catch (Exception e) {
+      logger.error(
+          "Error updating password for trainer with username: {}, Reason: {}",
+          command.getUsername(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update password for trainer", e);
+    }
   }
 
   @Override
   public void activate(UUID trainerId) {
-    User user = loadTrainerPort.findById(trainerId).getUser();
-    user.setIsActive(true);
-    updateUserPort.save(user);
+    logger.debug("Activating trainer with ID: {}", trainerId);
+    try {
+      User user = loadTrainerPort.findById(trainerId).getUser();
+      user.setIsActive(true);
+      updateUserPort.save(user);
+      logger.info("Trainer with ID: {} activated successfully", trainerId);
+    } catch (Exception e) {
+      logger.error(
+          "Error activating trainer with ID: {}, Reason: {}", trainerId, e.getMessage(), e);
+      throw new RuntimeException("Failed to activate trainer", e);
+    }
   }
 
   @Override
   public void deactivate(UUID trainerId) {
-    User user = loadTrainerPort.findById(trainerId).getUser();
-    user.setIsActive(false);
-    updateUserPort.save(user);
+    logger.debug("Deactivating trainer with ID: {}", trainerId);
+    try {
+      User user = loadTrainerPort.findById(trainerId).getUser();
+      user.setIsActive(false);
+      updateUserPort.save(user);
+      logger.info("Trainer with ID: {} deactivated successfully", trainerId);
+    } catch (Exception e) {
+      logger.error(
+          "Error deactivating trainer with ID: {}, Reason: {}", trainerId, e.getMessage(), e);
+      throw new RuntimeException("Failed to deactivate trainer", e);
+    }
   }
 }

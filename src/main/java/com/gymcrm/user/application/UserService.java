@@ -33,36 +33,61 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase {
 
   @Override
   public User create(CreateUserCommand command) {
-    logger.debug("Validating user creation command");
+    try {
+      if (command.getFirstName() == null
+          || command.getFirstName().isBlank()
+          || command.getLastName() == null
+          || command.getLastName().isBlank()) {
+        throw new IllegalArgumentException("First name and last name cannot be null or empty");
+      }
 
-    if (command.getFirstName() == null
-        || command.getFirstName().isBlank()
-        || command.getLastName() == null
-        || command.getLastName().isBlank()) {
-      throw new IllegalArgumentException("First name and last name cannot be null or empty");
+      command.setUsername(generateUsername(command.getFirstName(), command.getLastName()));
+      command.setPassword(UserUtil.generatePassword());
+      return updateUserPort.save(userFactory.createFrom(command));
+    } catch (Exception e) {
+      logger.error(
+          "Error creating user for: {} {}, Reason: {}",
+          command.getFirstName(),
+          command.getLastName(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to create user", e);
     }
-
-    logger.debug("Creating user for: {} {}", command.getFirstName(), command.getLastName());
-
-    command.setUsername(generateUsername(command.getFirstName(), command.getLastName()));
-    command.setPassword(UserUtil.generatePassword());
-
-    return updateUserPort.save(userFactory.createFrom(command));
   }
 
   private String generateUsername(String firstName, String lastName) {
-    String baseUsername = UserUtil.getBaseUsername(firstName, lastName);
-    var usernames = loadUserPort.findDistinctUsernamesStartingWith(baseUsername);
-    return UserUtil.generateUniqueUsername(new HashSet<>(usernames), baseUsername);
+    try {
+      String baseUsername = UserUtil.getBaseUsername(firstName, lastName);
+      var usernames = loadUserPort.findDistinctUsernamesStartingWith(baseUsername);
+      return UserUtil.generateUniqueUsername(new HashSet<>(usernames), baseUsername);
+    } catch (Exception e) {
+      logger.error(
+          "Error generating username for: {} {}, Reason: {}",
+          firstName,
+          lastName,
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to generate username", e);
+    }
   }
 
   @Override
   public User loadUserByUsername(String username) {
-    return loadUserPort.findByUsername(username);
+    try {
+      return loadUserPort.findByUsername(username);
+    } catch (Exception e) {
+      logger.error("Error fetching user by username: {}, Reason: {}", username, e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch user by username", e);
+    }
   }
 
   @Override
   public List<User> loadAll() {
-    return loadUserPort.findAll();
+    try {
+      return loadUserPort.findAll();
+    } catch (Exception e) {
+      logger.error("Error fetching all users, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch all users", e);
+    }
   }
 }

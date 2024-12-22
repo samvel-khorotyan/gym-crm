@@ -9,20 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface TraineePersistenceRepository extends JpaRepository<Trainee, UUID> {
-  //  @Modifying
-  //  @Transactional
-  //  @Query(
-  //          """
-  //          DELETE FROM Trainee t
-  //          WHERE EXISTS (
-  //              SELECT 1
-  //              FROM User u
-  //              WHERE u.username = :username
-  //              AND u.id = t.user.id
-  //          )
-  //          """
-  //  )
-  //  void deleteByUsername(@Param("username") String username);
   @Modifying
   @Transactional
   @Query(

@@ -91,7 +91,7 @@ public class MainConsole {
         case 2 -> isLoggedIn = loginAsTrainee(scanner);
         case 3 -> isLoggedIn = loginAsTrainer(scanner);
         case 4 -> {
-          System.out.println("Exiting application. Goodbye!");
+          System.out.println("\nExiting application. Goodbye!");
           return false;
         }
         default -> System.out.println("Invalid option. Please try again.");
@@ -113,7 +113,7 @@ public class MainConsole {
 
     try {
       if (crmFacade.authenticateAdmin(username, password)) {
-        System.out.println("Login successful as Admin!");
+        System.out.println("\nLogin successful as Admin!");
         isAdmin = true;
         return true;
       }
@@ -132,7 +132,7 @@ public class MainConsole {
 
     try {
       if (crmFacade.authenticateTrainee(username, password)) {
-        System.out.println("Login successful as Trainee!");
+        System.out.println("\nLogin successful as Trainee!");
         isTrainee = true;
         return true;
       }
@@ -151,7 +151,7 @@ public class MainConsole {
 
     try {
       if (crmFacade.authenticateTrainer(username, password)) {
-        System.out.println("Login successful as Trainer!");
+        System.out.println("\nLogin successful as Trainer!");
         isTrainer = true;
         return true;
       }
@@ -163,7 +163,7 @@ public class MainConsole {
   }
 
   private void logout() {
-    System.out.println("Logging out...");
+    System.out.println("\nLogging out...");
     isAdmin = false;
     isTrainer = false;
     isTrainee = false;
@@ -275,7 +275,7 @@ public class MainConsole {
         return false;
       }
       case 24 -> {
-        System.out.println("Exiting application. Goodbye!");
+        System.out.println("\nExiting application. Goodbye!");
         return false;
       }
       default -> System.out.println("Invalid option. Please try again.");
@@ -507,8 +507,7 @@ public class MainConsole {
 
       Map<UUID, UUID> trainingToTrainerMap = new HashMap<>();
 
-      System.out.println(
-          "\nChoose a trainer who is not currently assigned to the selected trainee.");
+      System.out.println("Choose a trainer who is not currently assigned to the selected trainee.");
       crmFacade
           .loadTrainersNotAssignedToTrainee(trainee.getUser().getUsername())
           .forEach(e -> System.out.println("- " + e));
@@ -516,6 +515,8 @@ public class MainConsole {
         System.out.println(
             "Training ID: "
                 + training.getId()
+                + ", Training Name: "
+                + training.getTrainingName()
                 + ", Current Trainer: "
                 + training.getTrainer().getUser().getUsername());
 
@@ -816,7 +817,8 @@ public class MainConsole {
       crmFacade.loadTrainees().forEach(e -> System.out.println("- " + e));
       System.out.print("Enter Trainee ID: ");
       UUID traineeId = UUID.fromString(scanner.nextLine());
-      System.out.print("Choose Trainer ID: ");
+      System.out.print("Choose Trainer ID: \n");
+
       crmFacade.loadTrainers().forEach(e -> System.out.println("- " + e));
       System.out.print("Enter Trainer ID: ");
       UUID trainerId = UUID.fromString(scanner.nextLine());

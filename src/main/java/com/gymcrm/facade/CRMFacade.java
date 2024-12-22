@@ -91,159 +91,385 @@ public class CRMFacade {
       CreateTraineeCommand createTraineeCommand, CreateUserCommand createUserCommand) {
     logger.debug(
         "Adding trainee: {} {}", createUserCommand.getFirstName(), createUserCommand.getLastName());
-    createUserCommand.setUserType(UserType.TRAINEE);
-    var user = userCreationUseCase.create(createUserCommand);
-    createTraineeCommand.setUser(user);
-    traineeCreationUseCase.create(traineeFactory.createFrom(createTraineeCommand));
-    logger.info("Trainee added successfully");
+    try {
+      createUserCommand.setUserType(UserType.TRAINEE);
+      var user = userCreationUseCase.create(createUserCommand);
+      createTraineeCommand.setUser(user);
+      traineeCreationUseCase.create(traineeFactory.createFrom(createTraineeCommand));
+      logger.info("Trainee added successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error adding trainee: {} {}, Reason: {}",
+          createUserCommand.getFirstName(),
+          createUserCommand.getLastName(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to add trainee", e);
+    }
   }
 
   public List<Trainee> loadTrainees() {
     logger.debug("Fetching all trainees");
-    return loadTraineeUseCase.loadAll();
+    try {
+      return loadTraineeUseCase.loadAll();
+    } catch (Exception e) {
+      logger.error("Error fetching all trainees, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainees", e);
+    }
   }
 
   public List<Training> findTraineeTrainingsByCriteria(
       LocalDate startDate, LocalDate endDate, String trainerName, String trainingType) {
-    return loadTrainingUseCase.findTraineeTrainingsByCriteria(
-        startDate, endDate, trainerName, trainingType);
+    logger.debug(
+        "Fetching trainee trainings with criteria: startDate={}, endDate={}, trainerName={}, trainingType={}",
+        startDate,
+        endDate,
+        trainerName,
+        trainingType);
+    try {
+      return loadTrainingUseCase.findTraineeTrainingsByCriteria(
+          startDate, endDate, trainerName, trainingType);
+    } catch (Exception e) {
+      logger.error("Error fetching trainee trainings by criteria, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainee trainings", e);
+    }
   }
 
   public Trainee loadTraineeById(UUID traineeId) {
     logger.debug("Fetching trainee by ID: {}", traineeId);
-    return loadTraineeUseCase.loadById(traineeId);
+    try {
+      return loadTraineeUseCase.loadById(traineeId);
+    } catch (Exception e) {
+      logger.error("Error fetching trainee by ID: {}, Reason: {}", traineeId, e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainee by ID", e);
+    }
   }
 
   public void modifyTrainee(UpdateTraineeCommand command) {
     logger.debug("Updating trainee with ID: {}", command.getTraineeId());
-    traineeUpdateUseCase.update(command);
-    logger.info("Trainee updated successfully");
+    try {
+      traineeUpdateUseCase.update(command);
+      logger.info("Trainee updated successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error updating trainee with ID: {}, Reason: {}",
+          command.getTraineeId(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainee", e);
+    }
   }
 
   public void modifyTraineePassword(UpdateTraineePasswordCommand command) {
     logger.debug("Updating trainee password with ID: {}", command.getTraineeId());
-    traineeUpdateUseCase.updatePassword(command);
+    try {
+      traineeUpdateUseCase.updatePassword(command);
+      logger.info("Trainee password updated successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error updating trainee password with ID: {}, Reason: {}",
+          command.getTraineeId(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainee password", e);
+    }
   }
 
   public void modifyTraineeTrainers(UUID traineeId, Map<UUID, UUID> map) {
-    traineeUpdateUseCase.updateTrainersOfTrainee(traineeId, map);
+    try {
+      traineeUpdateUseCase.updateTrainersOfTrainee(traineeId, map);
+    } catch (Exception e) {
+      logger.error(
+          "Error updating trainers for trainee with ID: {}, Reason: {}",
+          traineeId,
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainee trainers", e);
+    }
   }
 
   public void activateTrainee(UUID traineeId) {
     logger.debug("Activating trainee: {}", traineeId);
-    traineeUpdateUseCase.activate(traineeId);
+    try {
+      traineeUpdateUseCase.activate(traineeId);
+      logger.info("Trainee activated successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error activating trainee with ID: {}, Reason: {}", traineeId, e.getMessage(), e);
+      throw new RuntimeException("Failed to activate trainee", e);
+    }
   }
 
   public void deactivateTrainee(UUID traineeId) {
-    logger.debug("Deactivate trainee: {}", traineeId);
-    traineeUpdateUseCase.deactivate(traineeId);
+    logger.debug("Deactivating trainee: {}", traineeId);
+    try {
+      traineeUpdateUseCase.deactivate(traineeId);
+      logger.info("Trainee deactivated successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error deactivating trainee with ID: {}, Reason: {}", traineeId, e.getMessage(), e);
+      throw new RuntimeException("Failed to deactivate trainee", e);
+    }
   }
 
   public void deleteTraineeById(UUID traineeId) {
     logger.debug("Removing trainee with ID: {}", traineeId);
-    traineeUpdateUseCase.deleteById(traineeId);
-    logger.info("Trainee removed successfully");
+    try {
+      traineeUpdateUseCase.deleteById(traineeId);
+      logger.info("Trainee removed successfully");
+    } catch (Exception e) {
+      logger.error("Error removing trainee with ID: {}, Reason: {}", traineeId, e.getMessage(), e);
+      throw new RuntimeException("Failed to remove trainee", e);
+    }
   }
 
   public void deleteTraineeByUsername(String username) {
     logger.debug("Removing trainee with username: {}", username);
-    traineeUpdateUseCase.deleteByUsername(username);
+    try {
+      traineeUpdateUseCase.deleteByUsername(username);
+      logger.info("Trainee removed successfully by username");
+    } catch (Exception e) {
+      logger.error(
+          "Error removing trainee with username: {}, Reason: {}", username, e.getMessage(), e);
+      throw new RuntimeException("Failed to remove trainee by username", e);
+    }
   }
 
   public void addTrainerWithUser(
       CreateTrainerCommand createTrainerCommand, CreateUserCommand createUserCommand) {
     logger.debug(
         "Adding trainer: {} {}", createUserCommand.getFirstName(), createUserCommand.getLastName());
-    createUserCommand.setUserType(UserType.TRAINER);
-    User user = userCreationUseCase.create(createUserCommand);
-    createTrainerCommand.setUser(user);
-    trainerCreationUseCase.create(createTrainerCommand);
-    logger.info("Trainer added successfully");
+    try {
+      createUserCommand.setUserType(UserType.TRAINER);
+      User user = userCreationUseCase.create(createUserCommand);
+      createTrainerCommand.setUser(user);
+      trainerCreationUseCase.create(createTrainerCommand);
+      logger.info("Trainer added successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error adding trainer: {} {}, Reason: {}",
+          createUserCommand.getFirstName(),
+          createUserCommand.getLastName(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to add trainer", e);
+    }
   }
 
   public List<Trainer> loadTrainers() {
     logger.debug("Fetching all trainers");
-    return loadTrainerUseCase.loadAll();
+    try {
+      return loadTrainerUseCase.loadAll();
+    } catch (Exception e) {
+      logger.error("Error fetching all trainers, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainers", e);
+    }
   }
 
   public List<Trainer> loadTrainersNotAssignedToTrainee(String trainerName) {
     logger.debug("Fetching all trainers not assigned to trainee");
-    return loadTrainerUseCase.loadTrainersNotAssignedToTrainee(trainerName);
+    try {
+      return loadTrainerUseCase.loadTrainersNotAssignedToTrainee(trainerName);
+    } catch (Exception e) {
+      logger.error(
+          "Error fetching trainers not assigned to trainee, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainers not assigned to trainee", e);
+    }
   }
 
   public List<Training> findTrainerTrainingsByCriteria(
       LocalDate startDate, LocalDate endDate, String traineeName) {
-    return loadTrainingUseCase.findTrainerTrainingsByCriteria(startDate, endDate, traineeName);
+    logger.debug(
+        "Fetching trainer trainings with criteria: startDate={}, endDate={}, traineeName={}",
+        startDate,
+        endDate,
+        traineeName);
+    try {
+      return loadTrainingUseCase.findTrainerTrainingsByCriteria(startDate, endDate, traineeName);
+    } catch (Exception e) {
+      logger.error("Error fetching trainer trainings by criteria, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainer trainings by criteria", e);
+    }
   }
 
   public Trainer loadTrainerById(UUID trainerId) {
     logger.debug("Fetching trainer by ID: {}", trainerId);
-    return loadTrainerUseCase.loadById(trainerId);
+    try {
+      return loadTrainerUseCase.loadById(trainerId);
+    } catch (Exception e) {
+      logger.error("Error fetching trainer by ID: {}, Reason: {}", trainerId, e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainer by ID", e);
+    }
   }
 
   public void modifyTrainer(UpdateTrainerCommand command) {
     logger.debug("Updating trainer with ID: {}", command.getTrainerId());
-    trainerUpdateUseCase.update(command);
-    logger.info("Trainer updated successfully");
+    try {
+      trainerUpdateUseCase.update(command);
+      logger.info("Trainer updated successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error updating trainer with ID: {}, Reason: {}",
+          command.getTrainerId(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainer", e);
+    }
   }
 
   public void modifyTrainerPassword(UpdateTrainerPasswordCommand command) {
     logger.debug("Updating trainer password with ID: {}", command.getTrainerId());
-    trainerUpdateUseCase.updatePassword(command);
+    try {
+      trainerUpdateUseCase.updatePassword(command);
+      logger.info("Trainer password updated successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error updating trainer password with ID: {}, Reason: {}",
+          command.getTrainerId(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainer password", e);
+    }
   }
 
   public void activateTrainer(UUID trainerId) {
     logger.debug("Activating trainer: {}", trainerId);
-    trainerUpdateUseCase.activate(trainerId);
+    try {
+      trainerUpdateUseCase.activate(trainerId);
+      logger.info("Trainer activated successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error activating trainer with ID: {}, Reason: {}", trainerId, e.getMessage(), e);
+      throw new RuntimeException("Failed to activate trainer", e);
+    }
   }
 
   public void deactivateTrainer(UUID trainerId) {
-    logger.debug("Deactivate trainer: {}", trainerId);
-    trainerUpdateUseCase.deactivate(trainerId);
+    logger.debug("Deactivating trainer: {}", trainerId);
+    try {
+      trainerUpdateUseCase.deactivate(trainerId);
+      logger.info("Trainer deactivated successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error deactivating trainer with ID: {}, Reason: {}", trainerId, e.getMessage(), e);
+      throw new RuntimeException("Failed to deactivate trainer", e);
+    }
   }
 
   public void addTraining(CreateTrainingCommand command) {
     logger.debug("Adding training: {}", command.getTrainingName());
-    trainingCreationUseCase.create(command);
-    logger.info("Training added successfully");
+    try {
+      trainingCreationUseCase.create(command);
+      logger.info("Training added successfully");
+    } catch (Exception e) {
+      logger.error(
+          "Error adding training: {}, Reason: {}", command.getTrainingName(), e.getMessage(), e);
+      throw new RuntimeException("Failed to add training", e);
+    }
   }
 
   public List<Training> loadTrainings() {
     logger.debug("Fetching all trainings");
-    return loadTrainingUseCase.loadAll();
+    try {
+      return loadTrainingUseCase.loadAll();
+    } catch (Exception e) {
+      logger.error("Error fetching all trainings, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainings", e);
+    }
   }
 
   public Training loadTrainingById(UUID trainingId) {
     logger.debug("Fetching training by ID: {}", trainingId);
-    return loadTrainingUseCase.loadById(trainingId);
+    try {
+      return loadTrainingUseCase.loadById(trainingId);
+    } catch (Exception e) {
+      logger.error("Error fetching training by ID: {}, Reason: {}", trainingId, e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch training by ID", e);
+    }
   }
 
   public TrainingType addTrainingType(CreateTrainingTypeCommand command) {
     logger.debug("Adding training type: {}", command.getTrainingTypeName());
-    return trainingTypeCreationUseCase.create(command);
+    try {
+      return trainingTypeCreationUseCase.create(command);
+    } catch (Exception e) {
+      logger.error(
+          "Error adding training type: {}, Reason: {}",
+          command.getTrainingTypeName(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to add training type", e);
+    }
   }
 
   public boolean authenticateTrainee(String username, String password) {
-    return authenticationUseCase.authenticateTrainee(username, password);
+    logger.debug("Authenticating trainee with username: {}", username);
+    try {
+      return authenticationUseCase.authenticateTrainee(username, password);
+    } catch (Exception e) {
+      logger.error(
+          "Error authenticating trainee with username: {}, Reason: {}",
+          username,
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to authenticate trainee", e);
+    }
   }
 
   public boolean authenticateTrainer(String username, String password) {
-    return authenticationUseCase.authenticateTrainer(username, password);
+    logger.debug("Authenticating trainer with username: {}", username);
+    try {
+      return authenticationUseCase.authenticateTrainer(username, password);
+    } catch (Exception e) {
+      logger.error(
+          "Error authenticating trainer with username: {}, Reason: {}",
+          username,
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to authenticate trainer", e);
+    }
   }
 
   public boolean authenticateAdmin(String username, String password) {
-    return authenticationUseCase.authenticateAdmin(username, password);
+    logger.debug("Authenticating admin with username: {}", username);
+    try {
+      return authenticationUseCase.authenticateAdmin(username, password);
+    } catch (Exception e) {
+      logger.error(
+          "Error authenticating admin with username: {}, Reason: {}", username, e.getMessage(), e);
+      throw new RuntimeException("Failed to authenticate admin", e);
+    }
   }
 
   public List<User> loadUsers() {
-    return loadUserUseCase.loadAll();
+    logger.debug("Fetching all users");
+    try {
+      return loadUserUseCase.loadAll();
+    } catch (Exception e) {
+      logger.error("Error fetching all users, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch users", e);
+    }
   }
 
   public Trainee loadTraineeByUsername(String username) {
-    return loadUserUseCase.loadUserByUsername(username).getTrainee();
+    logger.debug("Fetching trainee by username: {}", username);
+    try {
+      return loadUserUseCase.loadUserByUsername(username).getTrainee();
+    } catch (Exception e) {
+      logger.error(
+          "Error fetching trainee by username: {}, Reason: {}", username, e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainee by username", e);
+    }
   }
 
   public Trainer loadTrainerByUsername(String username) {
-    return loadUserUseCase.loadUserByUsername(username).getTrainer();
+    logger.debug("Fetching trainer by username: {}", username);
+    try {
+      return loadUserUseCase.loadUserByUsername(username).getTrainer();
+    } catch (Exception e) {
+      logger.error(
+          "Error fetching trainer by username: {}, Reason: {}", username, e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainer by username", e);
+    }
   }
 }

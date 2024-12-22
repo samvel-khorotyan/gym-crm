@@ -55,13 +55,24 @@ public class TraineeService
   @Override
   public void create(Trainee trainee) {
     logger.debug("Creating new trainee with ID: {}", trainee.getId());
-    updateTraineePort.save(trainee);
+    try {
+      updateTraineePort.save(trainee);
+    } catch (Exception e) {
+      logger.error(
+          "Error creating trainee with ID: {}, Reason: {}", trainee.getId(), e.getMessage(), e);
+      throw new RuntimeException("Failed to create trainee", e);
+    }
   }
 
   @Override
   public List<Trainee> loadAll() {
     logger.debug("Fetching all trainees.");
-    return loadTraineePort.findAll();
+    try {
+      return loadTraineePort.findAll();
+    } catch (Exception e) {
+      logger.error("Error fetching all trainees, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch all trainees", e);
+    }
   }
 
   @Override
@@ -70,7 +81,12 @@ public class TraineeService
       throw new IllegalArgumentException("ID cannot be null.");
     }
     logger.debug("Fetching trainee with ID: {}", id);
-    return loadTraineePort.findById(id);
+    try {
+      return loadTraineePort.findById(id);
+    } catch (Exception e) {
+      logger.error("Error fetching trainee with ID: {}, Reason: {}", id, e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainee by ID", e);
+    }
   }
 
   @Override
@@ -80,36 +96,65 @@ public class TraineeService
     }
     logger.debug("Updating trainee with ID: {}", command.getTraineeId());
 
-    Trainee existingTrainee = loadTraineePort.findById(command.getTraineeId());
-    if (existingTrainee == null) {
-      throw new IllegalArgumentException("Trainee not found with ID: " + command.getTraineeId());
+    try {
+      Trainee existingTrainee = loadTraineePort.findById(command.getTraineeId());
+      existingTrainee.setAddress(command.getAddress());
+      existingTrainee.setDateOfBirth(command.getDateOfBirth());
+      updateTraineePort.save(existingTrainee);
+    } catch (Exception e) {
+      logger.error(
+          "Error updating trainee with ID: {}, Reason: {}",
+          command.getTraineeId(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainee", e);
     }
-
-    existingTrainee.setAddress(command.getAddress());
-    existingTrainee.setDateOfBirth(command.getDateOfBirth());
-    updateTraineePort.save(existingTrainee);
   }
 
   @Override
   public void updatePassword(UpdateTraineePasswordCommand command) {
-    authenticationUseCase.authenticateTrainee(command.getUsername(), command.getOldPassword());
-    User user = loadTraineePort.findById(command.getTraineeId()).getUser();
-    user.setPassword(command.getNewPassword());
-    updateUserPort.save(user);
+    logger.debug("Updating password for trainee with username: {}", command.getUsername());
+    try {
+      authenticationUseCase.authenticateTrainee(command.getUsername(), command.getOldPassword());
+      User user = loadTraineePort.findById(command.getTraineeId()).getUser();
+      user.setPassword(command.getNewPassword());
+      updateUserPort.save(user);
+    } catch (Exception e) {
+      logger.error(
+          "Error updating password for trainee with username: {}, Reason: {}",
+          command.getUsername(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainee password", e);
+    }
   }
 
   @Override
   public void activate(UUID traineeId) {
-    User user = loadTraineePort.findById(traineeId).getUser();
-    user.setIsActive(true);
-    updateUserPort.save(user);
+    logger.debug("Activating trainee with ID: {}", traineeId);
+    try {
+      User user = loadTraineePort.findById(traineeId).getUser();
+      user.setIsActive(true);
+      updateUserPort.save(user);
+    } catch (Exception e) {
+      logger.error(
+          "Error activating trainee with ID: {}, Reason: {}", traineeId, e.getMessage(), e);
+      throw new RuntimeException("Failed to activate trainee", e);
+    }
   }
 
   @Override
   public void deactivate(UUID traineeId) {
-    User user = loadTraineePort.findById(traineeId).getUser();
-    user.setIsActive(false);
-    updateUserPort.save(user);
+    logger.debug("Deactivating trainee with ID: {}", traineeId);
+    try {
+      User user = loadTraineePort.findById(traineeId).getUser();
+      user.setIsActive(false);
+      updateUserPort.save(user);
+    } catch (Exception e) {
+      logger.error(
+          "Error deactivating trainee with ID: {}, Reason: {}", traineeId, e.getMessage(), e);
+      throw new RuntimeException("Failed to deactivate trainee", e);
+    }
   }
 
   @Override
@@ -118,23 +163,30 @@ public class TraineeService
       throw new IllegalArgumentException("ID cannot be null.");
     }
     logger.debug("Deleting trainee with ID: {}", id);
-
-    Trainee trainee = loadTraineePort.findById(id);
-    if (trainee == null) {
-      throw new IllegalArgumentException("Trainee not found with ID: " + id);
+    try {
+      updateTraineePort.deleteById(id);
+    } catch (Exception e) {
+      logger.error("Error deleting trainee with ID: {}, Reason: {}", id, e.getMessage(), e);
+      throw new RuntimeException("Failed to delete trainee", e);
     }
-
-    updateTraineePort.deleteById(id);
   }
 
   @Override
   public void deleteByUsername(String username) {
-    updateTraineePort.deleteByUsername(username);
+    logger.debug("Deleting trainee with username: {}", username);
+    try {
+      updateTraineePort.deleteByUsername(username);
+    } catch (Exception e) {
+      logger.error(
+          "Error deleting trainee with username: {}, Reason: {}", username, e.getMessage(), e);
+      throw new RuntimeException("Failed to delete trainee by username", e);
+    }
   }
 
   @Transactional
   @Override
   public void updateTrainersOfTrainee(UUID traineeId, Map<UUID, UUID> trainerToTrainingMap) {
+    logger.debug("Updating trainers for trainee with ID: {}", traineeId);
     try {
       Trainee trainee = loadTraineePort.findById(traineeId);
 
@@ -158,19 +210,33 @@ public class TraineeService
         updateTrainersOfTrainee(new UpdateTraineeCommand(training));
         updateTrainingPort.save(training);
       }
+      logger.info("Trainers for trainee with ID: {} updated successfully", traineeId);
     } catch (Exception e) {
-      logger.error(e.getMessage());
+      logger.error(
+          "Error updating trainers for trainee with ID: {}, Reason: {}",
+          traineeId,
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainers for trainee", e);
     }
   }
 
   @Override
   public void updateTrainersOfTrainee(UpdateTraineeCommand command) {
+    logger.debug("Updating trainee for training with ID: {}", command.getTraining().getId());
     try {
       Trainee trainee = command.getTraining().getTrainee();
       trainee.setTrainers(new ArrayList<>(List.of(command.getTraining().getTrainer())));
       updateTraineePort.save(trainee);
+      logger.info(
+          "Trainee for training with ID: {} updated successfully", command.getTraining().getId());
     } catch (Exception e) {
-      logger.error(e.getMessage());
+      logger.error(
+          "Error updating trainee for training with ID: {}, Reason: {}",
+          command.getTraining().getId(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to update trainee for training", e);
     }
   }
 }

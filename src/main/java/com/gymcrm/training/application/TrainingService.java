@@ -41,12 +41,19 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
   @Override
   public void create(CreateTrainingCommand command) {
     logger.debug("Creating training with name: {}", command.getTrainingName());
-    if (command.getTrainingName() == null || command.getTrainingName().isEmpty()) {
-      throw new IllegalArgumentException("Training name cannot be null or empty.");
+    try {
+      Training training = trainingFactory.createFrom(command);
+      traineeUpdateUseCase.updateTrainersOfTrainee(new UpdateTraineeCommand(training));
+      updateTrainingPort.save(training);
+      logger.info("Training with name: {} created successfully", command.getTrainingName());
+    } catch (Exception e) {
+      logger.error(
+          "Error creating training with name: {}, Reason: {}",
+          command.getTrainingName(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException("Failed to create training", e);
     }
-    Training training = trainingFactory.createFrom(command);
-    traineeUpdateUseCase.updateTrainersOfTrainee(new UpdateTraineeCommand(training));
-    updateTrainingPort.save(training);
   }
 
   @Override
@@ -55,29 +62,57 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
       throw new IllegalArgumentException("Training ID cannot be null.");
     }
     logger.debug("Fetching training with ID: {}", trainingId);
-    Training training = loadTrainingPort.findById(trainingId);
-    if (training == null) {
-      throw new IllegalArgumentException("Training not found with ID: " + trainingId);
+    try {
+      return loadTrainingPort.findById(trainingId);
+    } catch (Exception e) {
+      logger.error(
+          "Error fetching training with ID: {}, Reason: {}", trainingId, e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch training by ID", e);
     }
-    return training;
   }
 
   @Override
   public List<Training> loadAll() {
     logger.debug("Fetching all trainings.");
-    return loadTrainingPort.findAll();
+    try {
+      return loadTrainingPort.findAll();
+    } catch (Exception e) {
+      logger.error("Error fetching all trainings, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainings", e);
+    }
   }
 
   @Override
   public List<Training> findTraineeTrainingsByCriteria(
       LocalDate startDate, LocalDate endDate, String trainerName, String trainingType) {
-    return loadTrainingPort.findTraineeTrainingsByCriteria(
-        startDate, endDate, trainerName, trainingType);
+    logger.debug(
+        "Fetching trainings with criteria: startDate={}, endDate={}, trainerName={}, trainingType={}",
+        startDate,
+        endDate,
+        trainerName,
+        trainingType);
+    try {
+      return loadTrainingPort.findTraineeTrainingsByCriteria(
+          startDate, endDate, trainerName, trainingType);
+    } catch (Exception e) {
+      logger.error("Error fetching trainings by criteria, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainings by criteria", e);
+    }
   }
 
   @Override
   public List<Training> findTrainerTrainingsByCriteria(
       LocalDate startDate, LocalDate endDate, String traineeName) {
-    return loadTrainingPort.findTrainerTrainingsByCriteria(startDate, endDate, traineeName);
+    logger.debug(
+        "Fetching trainings for trainer with criteria: startDate={}, endDate={}, traineeName={}",
+        startDate,
+        endDate,
+        traineeName);
+    try {
+      return loadTrainingPort.findTrainerTrainingsByCriteria(startDate, endDate, traineeName);
+    } catch (Exception e) {
+      logger.error("Error fetching trainer trainings by criteria, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainer trainings by criteria", e);
+    }
   }
 }
