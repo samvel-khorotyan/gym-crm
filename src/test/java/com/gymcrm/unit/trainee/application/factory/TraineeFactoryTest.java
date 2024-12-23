@@ -1,4 +1,4 @@
-package com.gymcrm.unit.factory;
+package com.gymcrm.unit.trainee.application.factory;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

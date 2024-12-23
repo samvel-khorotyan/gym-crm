@@ -1,5 +1,6 @@
 package com.gymcrm.trainee.application;
 
+import com.gymcrm.trainee.application.factory.TraineeFactory;
 import com.gymcrm.trainee.application.port.input.*;
 import com.gymcrm.trainee.application.port.output.LoadTraineePort;
 import com.gymcrm.trainee.application.port.output.UpdateTraineePort;
@@ -32,6 +33,7 @@ public class TraineeService
   private final UpdateUserPort updateUserPort;
   private final LoadTrainerPort loadTrainerPort;
   private final UpdateTrainingPort updateTrainingPort;
+  private final TraineeFactory traineeFactory;
 
   @Autowired
   public TraineeService(
@@ -39,12 +41,14 @@ public class TraineeService
       AuthenticationUseCase authenticationUseCase,
       UpdateUserPort updateUserPort,
       LoadTrainerPort loadTrainerPort,
-      UpdateTrainingPort updateTrainingPort) {
+      UpdateTrainingPort updateTrainingPort,
+      TraineeFactory traineeFactory) {
     this.updateTraineePort = updateTraineePort;
     this.authenticationUseCase = authenticationUseCase;
     this.updateUserPort = updateUserPort;
     this.loadTrainerPort = loadTrainerPort;
     this.updateTrainingPort = updateTrainingPort;
+    this.traineeFactory = traineeFactory;
   }
 
   @Autowired
@@ -53,13 +57,11 @@ public class TraineeService
   }
 
   @Override
-  public void create(Trainee trainee) {
-    logger.debug("Creating new trainee with ID: {}", trainee.getId());
+  public void create(CreateTraineeCommand command) {
     try {
-      updateTraineePort.save(trainee);
+      updateTraineePort.save(traineeFactory.createFrom(command));
     } catch (Exception e) {
-      logger.error(
-          "Error creating trainee with ID: {}, Reason: {}", trainee.getId(), e.getMessage(), e);
+      logger.error("Failed to create trainee: {}", e.getMessage(), e);
       throw new RuntimeException("Failed to create trainee", e);
     }
   }

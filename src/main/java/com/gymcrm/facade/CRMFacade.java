@@ -1,6 +1,5 @@
 package com.gymcrm.facade;
 
-import com.gymcrm.trainee.application.factory.TraineeFactory;
 import com.gymcrm.trainee.application.port.input.*;
 import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.application.port.input.*;
@@ -42,7 +41,6 @@ public class CRMFacade {
   private final AuthenticationUseCase authenticationUseCase;
   private final LoadTrainingUseCase loadTrainingUseCase;
   private UserCreationUseCase userCreationUseCase;
-  private final TraineeFactory traineeFactory;
   private final LoadUserUseCase loadUserUseCase;
 
   @Autowired
@@ -54,7 +52,6 @@ public class CRMFacade {
       LoadTraineeUseCase loadTraineeUseCase,
       TrainingCreationUseCase trainingCreationUseCase,
       LoadTrainingUseCase loadTrainingUseCase,
-      TraineeFactory traineeFactory,
       LoadUserUseCase loadUserUseCase) {
     this.trainingTypeCreationUseCase = trainingTypeCreationUseCase;
     this.authenticationUseCase = authenticationUseCase;
@@ -63,7 +60,6 @@ public class CRMFacade {
     this.loadTraineeUseCase = loadTraineeUseCase;
     this.trainingCreationUseCase = trainingCreationUseCase;
     this.loadTrainingUseCase = loadTrainingUseCase;
-    this.traineeFactory = traineeFactory;
     this.loadUserUseCase = loadUserUseCase;
   }
 
@@ -95,7 +91,7 @@ public class CRMFacade {
       createUserCommand.setUserType(UserType.TRAINEE);
       var user = userCreationUseCase.create(createUserCommand);
       createTraineeCommand.setUser(user);
-      traineeCreationUseCase.create(traineeFactory.createFrom(createTraineeCommand));
+      traineeCreationUseCase.create(createTraineeCommand);
       logger.info("Trainee added successfully");
     } catch (Exception e) {
       logger.error(

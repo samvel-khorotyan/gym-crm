@@ -1,4 +1,4 @@
-package com.gymcrm.unit.util;
+package com.gymcrm.unit.common;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
