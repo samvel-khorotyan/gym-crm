@@ -183,8 +183,7 @@ public class MainConsole {
         "Update Trainee",
         "Update Trainee Password",
         "Update Trainee Trainers",
-        "Activate Trainee",
-        "Deactivate Trainee",
+        "Activate/Deactivate Trainee",
         "Delete Trainee",
         "Delete Trainee By Username",
         "Create Trainer",
@@ -194,8 +193,7 @@ public class MainConsole {
         "Select Trainers Not Assigned To Trainee",
         "Update Trainer",
         "Update Trainer Password",
-        "Activate Trainer",
-        "Deactivate Trainer",
+        "Activate/Deactivate Trainer",
         "Create Training",
         "Select Training",
         "Logout",
@@ -255,26 +253,24 @@ public class MainConsole {
       case 5 -> updateTrainee(scanner);
       case 6 -> updateTraineePassword(scanner);
       case 7 -> updateTraineeTrainers(scanner);
-      case 8 -> activateTrainee(scanner);
-      case 9 -> deactivateTrainee(scanner);
-      case 10 -> deleteTrainee(scanner);
-      case 11 -> deleteTraineeByUsername(scanner);
-      case 12 -> createTrainer(scanner);
-      case 13 -> selectTrainer(scanner);
-      case 14 -> selectTrainerByUsername(scanner);
-      case 15 -> selectTrainerTrainingsByCriteria(scanner);
-      case 16 -> selectTrainersNotAssignedToTrainee(scanner);
-      case 17 -> updateTrainer(scanner);
-      case 18 -> updateTrainerPassword(scanner);
-      case 19 -> activateTrainer(scanner);
-      case 20 -> deactivateTrainer(scanner);
-      case 21 -> createTraining(scanner);
-      case 22 -> selectTraining(scanner);
-      case 23 -> {
+      case 8 -> activateDeactivateTrainee(scanner);
+      case 9 -> deleteTrainee(scanner);
+      case 10 -> deleteTraineeByUsername(scanner);
+      case 11 -> createTrainer(scanner);
+      case 12 -> selectTrainer(scanner);
+      case 13 -> selectTrainerByUsername(scanner);
+      case 14 -> selectTrainerTrainingsByCriteria(scanner);
+      case 15 -> selectTrainersNotAssignedToTrainee(scanner);
+      case 16 -> updateTrainer(scanner);
+      case 17 -> updateTrainerPassword(scanner);
+      case 18 -> activateDeactivateTrainer(scanner);
+      case 19 -> createTraining(scanner);
+      case 20 -> selectTraining(scanner);
+      case 21 -> {
         logout();
         return false;
       }
-      case 24 -> {
+      case 22 -> {
         System.out.println("\nExiting application. Goodbye!");
         return false;
       }
@@ -538,32 +534,19 @@ public class MainConsole {
     }
   }
 
-  private void activateTrainee(Scanner scanner) {
+  private void activateDeactivateTrainee(Scanner scanner) {
     try {
       System.out.println("\nChoose Trainee");
       crmFacade.loadTrainees().forEach(e -> System.out.println("- " + e));
       System.out.print("Enter Trainee ID: ");
       UUID id = UUID.fromString(scanner.nextLine());
 
-      crmFacade.activateTrainee(id);
-      System.out.println("\nTrainee activated successfully!");
+      boolean isActive = crmFacade.activateDeactivateTrainee(id);
+      String userState;
+      if (isActive) userState = "Activated";
+      else userState = "Deactivated";
+      System.out.println("\nTrainee " + userState + " successfully!");
     } catch (Exception e) {
-      logger.warn("Error during activation: {}", e.getMessage(), e);
-      System.out.println("An unexpected error occurred. Please try again.");
-    }
-  }
-
-  private void deactivateTrainee(Scanner scanner) {
-    try {
-      System.out.println("\nChoose Trainee");
-      crmFacade.loadTrainees().forEach(e -> System.out.println("- " + e));
-      System.out.print("Enter Trainee ID: ");
-      UUID id = UUID.fromString(scanner.nextLine());
-
-      crmFacade.deactivateTrainee(id);
-      System.out.println("\nTrainee deactivated successfully!");
-    } catch (Exception e) {
-      logger.warn("Error during deactivation: {}", e.getMessage(), e);
       System.out.println("An unexpected error occurred. Please try again.");
     }
   }
@@ -780,32 +763,19 @@ public class MainConsole {
     }
   }
 
-  private void activateTrainer(Scanner scanner) {
+  private void activateDeactivateTrainer(Scanner scanner) {
     try {
       System.out.println("\nChoose Trainer");
       crmFacade.loadTrainers().forEach(e -> System.out.println("- " + e));
       System.out.print("Enter Trainer ID: ");
       UUID id = UUID.fromString(scanner.nextLine());
 
-      crmFacade.activateTrainer(id);
-      System.out.println("\nTrainer activated successfully!");
+      boolean isActive = crmFacade.activateDeactivateTrainer(id);
+      String userState;
+      if (isActive) userState = "Activated";
+      else userState = "Deactivated";
+      System.out.println("\nTrainer " + userState + " successfully!");
     } catch (Exception e) {
-      logger.warn("Error during activation: {}", e.getMessage(), e);
-      System.out.println("An unexpected error occurred. Please try again.");
-    }
-  }
-
-  private void deactivateTrainer(Scanner scanner) {
-    try {
-      System.out.println("\nChoose Trainer");
-      crmFacade.loadTrainers().forEach(e -> System.out.println("- " + e));
-      System.out.print("Enter Trainer ID: ");
-      UUID id = UUID.fromString(scanner.nextLine());
-
-      crmFacade.deactivateTrainer(id);
-      System.out.println("\nTrainer deactivated successfully!");
-    } catch (Exception e) {
-      logger.warn("Error during deactivation: {}", e.getMessage(), e);
       System.out.println("An unexpected error occurred. Please try again.");
     }
   }

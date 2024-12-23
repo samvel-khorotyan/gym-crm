@@ -142,32 +142,19 @@ public class TrainerService
   }
 
   @Override
-  public void activate(UUID trainerId) {
-    logger.debug("Activating trainer with ID: {}", trainerId);
+  public boolean activateDeactivate(UUID trainerId) {
     try {
       User user = loadTrainerPort.findById(trainerId).getUser();
-      user.setIsActive(true);
+      var isActive = user.getIsActive();
+      user.setIsActive(!isActive);
       updateUserPort.save(user);
-      logger.info("Trainer with ID: {} activated successfully", trainerId);
+      return user.getIsActive();
     } catch (Exception e) {
-      logger.error(
-          "Error activating trainer with ID: {}, Reason: {}", trainerId, e.getMessage(), e);
-      throw new RuntimeException("Failed to activate trainer", e);
-    }
-  }
-
-  @Override
-  public void deactivate(UUID trainerId) {
-    logger.debug("Deactivating trainer with ID: {}", trainerId);
-    try {
-      User user = loadTrainerPort.findById(trainerId).getUser();
-      user.setIsActive(false);
-      updateUserPort.save(user);
-      logger.info("Trainer with ID: {} deactivated successfully", trainerId);
-    } catch (Exception e) {
-      logger.error(
-          "Error deactivating trainer with ID: {}, Reason: {}", trainerId, e.getMessage(), e);
-      throw new RuntimeException("Failed to deactivate trainer", e);
+      throw new RuntimeException(
+          String.format(
+              "Failed to activate/deactivate trainer with ID: %s. Cause: %s",
+              trainerId, e.getMessage()),
+          e);
     }
   }
 }

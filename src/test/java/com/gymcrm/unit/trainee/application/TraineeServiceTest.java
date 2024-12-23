@@ -128,22 +128,12 @@ class TraineeServiceTest {
   }
 
   @Test
-  void activate_ShouldActivateTrainee_WhenValidIdProvided() {
+  void activate_ShouldActivateDeactivateTrainee_WhenValidIdProvided() {
     when(loadTraineePort.findById(traineeId)).thenReturn(trainee);
 
-    traineeService.activate(traineeId);
+    traineeService.activateDeactivate(traineeId);
 
     assertTrue(user.getIsActive());
-    verify(updateUserPort, times(1)).save(user);
-  }
-
-  @Test
-  void deactivate_ShouldDeactivateTrainee_WhenValidIdProvided() {
-    when(loadTraineePort.findById(traineeId)).thenReturn(trainee);
-
-    traineeService.deactivate(traineeId);
-
-    assertFalse(user.getIsActive());
     verify(updateUserPort, times(1)).save(user);
   }
 

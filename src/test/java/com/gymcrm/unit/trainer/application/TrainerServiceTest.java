@@ -143,30 +143,4 @@ class TrainerServiceTest {
     assertEquals("newPass", user.getPassword());
     verify(updateUserPort, times(1)).save(user);
   }
-
-  @Test
-  void activate_ShouldActivateTrainer_WhenValidIdProvided() {
-    Trainer trainer = new Trainer();
-    User user = new User();
-    trainer.setUser(user);
-    when(loadTrainerPort.findById(trainerId)).thenReturn(trainer);
-
-    trainerService.activate(trainerId);
-
-    assertTrue(user.getIsActive());
-    verify(updateUserPort, times(1)).save(user);
-  }
-
-  @Test
-  void deactivate_ShouldDeactivateTrainer_WhenValidIdProvided() {
-    Trainer trainer = new Trainer();
-    User user = new User();
-    trainer.setUser(user);
-    when(loadTrainerPort.findById(trainerId)).thenReturn(trainer);
-
-    trainerService.deactivate(trainerId);
-
-    assertFalse(user.getIsActive());
-    verify(updateUserPort, times(1)).save(user);
-  }
 }

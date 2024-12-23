@@ -7,7 +7,5 @@ public interface TrainerUpdateUseCase {
 
   void updatePassword(UpdateTrainerPasswordCommand command);
 
-  void activate(UUID trainerId);
-
-  void deactivate(UUID trainerId);
+  boolean activateDeactivate(UUID trainerId);
 }

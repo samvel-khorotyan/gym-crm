@@ -132,30 +132,19 @@ public class TraineeService
   }
 
   @Override
-  public void activate(UUID traineeId) {
-    logger.debug("Activating trainee with ID: {}", traineeId);
+  public boolean activateDeactivate(UUID traineeId) {
     try {
       User user = loadTraineePort.findById(traineeId).getUser();
-      user.setIsActive(true);
+      var isActive = user.getIsActive();
+      user.setIsActive(!isActive);
       updateUserPort.save(user);
+      return user.getIsActive();
     } catch (Exception e) {
-      logger.error(
-          "Error activating trainee with ID: {}, Reason: {}", traineeId, e.getMessage(), e);
-      throw new RuntimeException("Failed to activate trainee", e);
-    }
-  }
-
-  @Override
-  public void deactivate(UUID traineeId) {
-    logger.debug("Deactivating trainee with ID: {}", traineeId);
-    try {
-      User user = loadTraineePort.findById(traineeId).getUser();
-      user.setIsActive(false);
-      updateUserPort.save(user);
-    } catch (Exception e) {
-      logger.error(
-          "Error deactivating trainee with ID: {}, Reason: {}", traineeId, e.getMessage(), e);
-      throw new RuntimeException("Failed to deactivate trainee", e);
+      throw new RuntimeException(
+          String.format(
+              "Failed to activate/deactivate trainee with ID: %s. Cause: %s",
+              traineeId, e.getMessage()),
+          e);
     }
   }
 

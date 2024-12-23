@@ -184,27 +184,15 @@ public class CRMFacade {
     }
   }
 
-  public void activateTrainee(UUID traineeId) {
-    logger.debug("Activating trainee: {}", traineeId);
+  public boolean activateDeactivateTrainee(UUID traineeId) {
     try {
-      traineeUpdateUseCase.activate(traineeId);
-      logger.info("Trainee activated successfully");
+      return traineeUpdateUseCase.activateDeactivate(traineeId);
     } catch (Exception e) {
-      logger.error(
-          "Error activating trainee with ID: {}, Reason: {}", traineeId, e.getMessage(), e);
-      throw new RuntimeException("Failed to activate trainee", e);
-    }
-  }
-
-  public void deactivateTrainee(UUID traineeId) {
-    logger.debug("Deactivating trainee: {}", traineeId);
-    try {
-      traineeUpdateUseCase.deactivate(traineeId);
-      logger.info("Trainee deactivated successfully");
-    } catch (Exception e) {
-      logger.error(
-          "Error deactivating trainee with ID: {}, Reason: {}", traineeId, e.getMessage(), e);
-      throw new RuntimeException("Failed to deactivate trainee", e);
+      throw new RuntimeException(
+          String.format(
+              "Failed to activate/deactivate trainee with ID: %s. Cause: %s",
+              traineeId, e.getMessage()),
+          e);
     }
   }
 
@@ -328,27 +316,15 @@ public class CRMFacade {
     }
   }
 
-  public void activateTrainer(UUID trainerId) {
-    logger.debug("Activating trainer: {}", trainerId);
+  public boolean activateDeactivateTrainer(UUID trainerId) {
     try {
-      trainerUpdateUseCase.activate(trainerId);
-      logger.info("Trainer activated successfully");
+      return trainerUpdateUseCase.activateDeactivate(trainerId);
     } catch (Exception e) {
-      logger.error(
-          "Error activating trainer with ID: {}, Reason: {}", trainerId, e.getMessage(), e);
-      throw new RuntimeException("Failed to activate trainer", e);
-    }
-  }
-
-  public void deactivateTrainer(UUID trainerId) {
-    logger.debug("Deactivating trainer: {}", trainerId);
-    try {
-      trainerUpdateUseCase.deactivate(trainerId);
-      logger.info("Trainer deactivated successfully");
-    } catch (Exception e) {
-      logger.error(
-          "Error deactivating trainer with ID: {}, Reason: {}", trainerId, e.getMessage(), e);
-      throw new RuntimeException("Failed to deactivate trainer", e);
+      throw new RuntimeException(
+          String.format(
+              "Failed to activate/deactivate trainer with ID: %s. Cause: %s",
+              trainerId, e.getMessage()),
+          e);
     }
   }
 

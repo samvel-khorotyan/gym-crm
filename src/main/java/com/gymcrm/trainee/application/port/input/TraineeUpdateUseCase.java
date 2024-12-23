@@ -12,9 +12,7 @@ public interface TraineeUpdateUseCase {
 
   void updateTrainersOfTrainee(UpdateTraineeCommand command);
 
-  void activate(UUID traineeId);
-
-  void deactivate(UUID traineeId);
+  boolean activateDeactivate(UUID traineeId);
 
   void deleteById(UUID id);
 
