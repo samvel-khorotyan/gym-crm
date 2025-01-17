@@ -5,7 +5,6 @@ import com.gymcrm.user.application.port.output.AuthenticationPort;
 import com.gymcrm.user.application.port.output.LoadUserPort;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
-import com.gymcrm.user.domain.UserType;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -42,7 +41,7 @@ public class UserRepository implements UpdateUserPort, LoadUserPort, Authenticat
   }
 
   @Override
-  public boolean userExistsByCredentials(String username, String password, UserType userType) {
-    return repository.existsByUsernameAndPasswordAndUserType(username, password, userType);
+  public boolean userExistsByCredentials(String username, String password) {
+    return repository.existsByUsernameAndPassword(username, password);
   }
 }

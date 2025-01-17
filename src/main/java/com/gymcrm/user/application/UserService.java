@@ -1,9 +1,9 @@
 package com.gymcrm.user.application;
 
+import com.gymcrm.common.exception.UnauthorizedException;
+import com.gymcrm.user.application.exception.UserNotFoundException;
 import com.gymcrm.user.application.factory.UserFactory;
-import com.gymcrm.user.application.port.input.CreateUserCommand;
-import com.gymcrm.user.application.port.input.LoadUserUseCase;
-import com.gymcrm.user.application.port.input.UserCreationUseCase;
+import com.gymcrm.user.application.port.input.*;
 import com.gymcrm.user.application.port.output.LoadUserPort;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
@@ -16,19 +16,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UserService implements UserCreationUseCase, LoadUserUseCase {
+public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUpdateUseCase {
   private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
   private final UserFactory userFactory;
   private final UpdateUserPort updateUserPort;
   private final LoadUserPort loadUserPort;
+  private final AuthenticationUseCase authenticationUseCase;
 
   @Autowired
   public UserService(
-      UserFactory userFactory, UpdateUserPort updateUserPort, LoadUserPort loadUserPort) {
+      UserFactory userFactory,
+      UpdateUserPort updateUserPort,
+      LoadUserPort loadUserPort,
+      AuthenticationUseCase authenticationUseCase) {
     this.userFactory = userFactory;
     this.updateUserPort = updateUserPort;
     this.loadUserPort = loadUserPort;
+    this.authenticationUseCase = authenticationUseCase;
   }
 
   @Override
@@ -88,6 +93,22 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase {
     } catch (Exception e) {
       logger.error("Error fetching all users, Reason: {}", e.getMessage(), e);
       throw new RuntimeException("Failed to fetch all users", e);
+    }
+  }
+
+  @Override
+  public void updatePassword(UpdatePasswordCommand command) {
+    try {
+      authenticationUseCase.authenticate(command.getUsername(), command.getOldPassword());
+      User user = loadUserPort.findByUsername(command.getUsername());
+      user.setPassword(command.getNewPassword());
+      updateUserPort.save(user);
+    } catch (UnauthorizedException | UserNotFoundException e) {
+      logger.warn("Failed to update password: {}", e.getMessage());
+      throw e;
+    } catch (Exception e) {
+      logger.error("Unexpected error while updating password: {}", e.getMessage(), e);
+      throw new RuntimeException("Unexpected error occurred. Please contact support.", e);
     }
   }
 }

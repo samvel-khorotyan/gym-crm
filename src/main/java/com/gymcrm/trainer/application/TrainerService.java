@@ -1,19 +1,25 @@
 package com.gymcrm.trainer.application;
 
+import com.gymcrm.trainer.adapter.input.web.mapper.TrainerUpdateMapper;
+import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
 import com.gymcrm.trainer.application.factory.TrainerFactory;
 import com.gymcrm.trainer.application.port.input.*;
 import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
 import com.gymcrm.trainer.application.port.output.UpdateTrainerPort;
 import com.gymcrm.trainer.domain.Trainer;
-import com.gymcrm.user.application.port.input.AuthenticationUseCase;
+import com.gymcrm.user.adapter.input.web.mapper.UserUpdateMapper;
+import com.gymcrm.user.application.port.input.CreateUserCommand;
+import com.gymcrm.user.application.port.input.UpdateUserCommand;
+import com.gymcrm.user.application.port.input.UserCreationUseCase;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
+import com.gymcrm.user.domain.UserType;
 import java.util.List;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TrainerService
@@ -23,19 +29,25 @@ public class TrainerService
   private final UpdateTrainerPort updateTrainerPort;
   private LoadTrainerPort loadTrainerPort;
   private final TrainerFactory trainerFactory;
-  private final AuthenticationUseCase authenticationUseCase;
+  private final UserCreationUseCase userCreationUseCase;
   private final UpdateUserPort updateUserPort;
+  private final UserUpdateMapper userUpdateMapper;
+  private final TrainerUpdateMapper trainerUpdateMapper;
 
   @Autowired
   public TrainerService(
       UpdateTrainerPort updateTrainerPort,
       TrainerFactory trainerFactory,
-      AuthenticationUseCase authenticationUseCase,
-      UpdateUserPort updateUserPort) {
+      UserCreationUseCase userCreationUseCase,
+      UpdateUserPort updateUserPort,
+      UserUpdateMapper userUpdateMapper,
+      TrainerUpdateMapper trainerUpdateMapper) {
     this.updateTrainerPort = updateTrainerPort;
     this.trainerFactory = trainerFactory;
-    this.authenticationUseCase = authenticationUseCase;
+    this.userCreationUseCase = userCreationUseCase;
     this.updateUserPort = updateUserPort;
+    this.userUpdateMapper = userUpdateMapper;
+    this.trainerUpdateMapper = trainerUpdateMapper;
   }
 
   @Autowired
@@ -44,20 +56,15 @@ public class TrainerService
   }
 
   @Override
-  public void create(CreateTrainerCommand command) {
-    if (command.getSpecialization() == null) {
-      throw new IllegalArgumentException("Specialization cannot be null.");
-    }
-
-    Trainer trainer = trainerFactory.createFrom(command);
-
-    logger.debug("Creating trainer with ID: {}", trainer.getId());
+  public Trainer create(CreateTrainerCommand command) {
     try {
-      updateTrainerPort.save(trainer);
-      logger.info("Trainer with ID: {} created successfully", trainer.getId());
+      command.setUser(
+          userCreationUseCase.create(
+              new CreateUserCommand(
+                  command.getFirstName(), command.getLastName(), UserType.TRAINER)));
+      return updateTrainerPort.save(trainerFactory.createFrom(command));
     } catch (Exception e) {
-      logger.error(
-          "Error creating trainer with ID: {}, Reason: {}", trainer.getId(), e.getMessage(), e);
+      logger.error("Failed to create trainer: {}", e.getMessage(), e);
       throw new RuntimeException("Failed to create trainer", e);
     }
   }
@@ -74,10 +81,9 @@ public class TrainerService
   }
 
   @Override
-  public List<Trainer> loadTrainersNotAssignedToTrainee(String trainerName) {
-    logger.debug("Fetching trainers not assigned to trainee with name: {}", trainerName);
+  public List<Trainer> loadActiveTrainersNotAssignedToTrainee(String traineeUsername) {
     try {
-      return loadTrainerPort.findTrainersNotAssignedToTrainee(trainerName);
+      return loadTrainerPort.findActiveTrainersNotAssignedToTrainee(traineeUsername);
     } catch (Exception e) {
       logger.error(
           "Error fetching trainers not assigned to trainee, Reason: {}", e.getMessage(), e);
@@ -86,31 +92,22 @@ public class TrainerService
   }
 
   @Override
-  public Trainer loadById(UUID id) {
-    if (id == null) {
-      throw new IllegalArgumentException("ID cannot be null.");
-    }
-    logger.debug("Fetching trainer with ID: {}", id);
-    try {
-      return loadTrainerPort.findById(id);
-    } catch (Exception e) {
-      logger.error("Error fetching trainer with ID: {}, Reason: {}", id, e.getMessage(), e);
-      throw new RuntimeException("Failed to fetch trainer by ID", e);
-    }
+  public Trainer loadByUsername(String username) {
+    return loadTrainerPort.findByUsernameWithTrainees(username);
   }
 
+  @Transactional
   @Override
-  public void update(UpdateTrainerCommand command) {
-    if (command.getTrainerId() == null) {
-      throw new IllegalArgumentException("ID cannot be null.");
-    }
-    logger.debug("Updating trainer with ID: {}", command.getTrainerId());
-
+  public Trainer update(UpdateTrainerCommand command) {
     try {
-      Trainer existingTrainer = loadTrainerPort.findById(command.getTrainerId());
-      existingTrainer.setSpecialization(command.getSpecialization());
-      updateTrainerPort.save(existingTrainer);
-      logger.info("Trainer with ID: {} updated successfully", command.getTrainerId());
+      Trainer existingTrainer = loadTrainerPort.findByIdWithTrainees(command.getTrainerId());
+      userUpdateMapper.updateUserFromCommand(
+          new UpdateUserCommand(
+              command.getFirstName(), command.getLastName(), command.getIsActive()),
+          existingTrainer.getUser());
+      trainerUpdateMapper.updateTrainerFromCommand(command, existingTrainer);
+
+      return updateTrainerPort.save(existingTrainer);
     } catch (Exception e) {
       logger.error(
           "Error updating trainer with ID: {}, Reason: {}",
@@ -122,39 +119,20 @@ public class TrainerService
   }
 
   @Override
-  public void updatePassword(UpdateTrainerPasswordCommand command) {
-    logger.debug("Updating password for trainer with username: {}", command.getUsername());
+  public void activateDeactivate(ActivateDeactivateTrainerCommand command) {
     try {
-      authenticationUseCase.authenticateTrainer(command.getUsername(), command.getOldPassword());
-      User user = loadTrainerPort.findById(command.getTrainerId()).getUser();
-      user.setPassword(command.getNewPassword());
-      updateUserPort.save(user);
-      logger.info(
-          "Password updated successfully for trainer with username: {}", command.getUsername());
-    } catch (Exception e) {
-      logger.error(
-          "Error updating password for trainer with username: {}, Reason: {}",
-          command.getUsername(),
-          e.getMessage(),
-          e);
-      throw new RuntimeException("Failed to update password for trainer", e);
-    }
-  }
+      User user = loadTrainerPort.findByUsername(command.getUsername()).getUser();
 
-  @Override
-  public boolean activateDeactivate(UUID trainerId) {
-    try {
-      User user = loadTrainerPort.findById(trainerId).getUser();
-      var isActive = user.getIsActive();
-      user.setIsActive(!isActive);
+      user.setIsActive(command.getIsActive());
       updateUserPort.save(user);
-      return user.getIsActive();
+    } catch (TrainerNotFoundException e) {
+      logger.warn("Trainer with username: {} not found.", command.getUsername());
+      throw e;
     } catch (Exception e) {
-      throw new RuntimeException(
-          String.format(
-              "Failed to activate/deactivate trainer with ID: %s. Cause: %s",
-              trainerId, e.getMessage()),
-          e);
+      String errorMessage =
+          String.format("Failed to activate/deactivate trainer. Cause: %s", e.getMessage());
+      logger.error(errorMessage, e);
+      throw new RuntimeException(errorMessage, e);
     }
   }
 }

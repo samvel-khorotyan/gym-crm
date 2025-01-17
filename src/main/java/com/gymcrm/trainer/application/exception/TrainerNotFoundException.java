@@ -11,4 +11,8 @@ public class TrainerNotFoundException extends NotFoundException {
   public static TrainerNotFoundException by(UUID id) {
     return new TrainerNotFoundException("Trainer not found by trainer ID: " + id);
   }
+
+  public static TrainerNotFoundException by(String username) {
+    return new TrainerNotFoundException("Trainer not found by username: " + username);
+  }
 }

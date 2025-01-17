@@ -19,8 +19,22 @@ public class TraineeRepository implements UpdateTraineePort, LoadTraineePort {
   }
 
   @Override
-  public Trainee findById(UUID id) {
-    return repository.findById(id).orElseThrow(() -> TraineeNotFoundException.by(id));
+  public Trainee findByIdWithTrainers(UUID id) {
+    return repository.findByIdWithTrainers(id).orElseThrow(() -> TraineeNotFoundException.by(id));
+  }
+
+  @Override
+  public Trainee findByUsernameWithTrainers(String username) {
+    return repository
+        .findByUsernameWithTrainers(username)
+        .orElseThrow(() -> TraineeNotFoundException.by(username));
+  }
+
+  @Override
+  public Trainee findByUsername(String username) {
+    return repository
+        .findByUserUsername(username)
+        .orElseThrow(() -> TraineeNotFoundException.by(username));
   }
 
   @Override
@@ -29,13 +43,8 @@ public class TraineeRepository implements UpdateTraineePort, LoadTraineePort {
   }
 
   @Override
-  public void save(Trainee trainee) {
-    repository.save(trainee);
-  }
-
-  @Override
-  public void deleteById(UUID id) {
-    repository.deleteById(id);
+  public Trainee save(Trainee trainee) {
+    return repository.save(trainee);
   }
 
   @Override

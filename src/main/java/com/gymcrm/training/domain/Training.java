@@ -3,10 +3,9 @@ package com.gymcrm.training.domain;
 import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.trainingtype.domain.TrainingType;
-import com.gymcrm.util.UUIDCharType;
-import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
+import javax.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
 
@@ -18,7 +17,7 @@ import org.hibernate.annotations.Type;
 @Table(name = "training")
 public class Training {
   @Id
-  @Type(value = UUIDCharType.class)
+  @Type(type = "uuid-char")
   private UUID id;
 
   @Column(name = "training_name ", nullable = false)
@@ -41,27 +40,4 @@ public class Training {
 
   @Column(name = "training_duration", nullable = false)
   private Integer trainingDuration;
-
-  @Override
-  public String toString() {
-    return "Training{"
-        + "id="
-        + id
-        + ", trainingName='"
-        + trainingName
-        + '\''
-        + ", trainingDate='"
-        + trainingDate
-        + '\''
-        + ", trainingDuration='"
-        + trainingDuration
-        + '\''
-        + ",\ntrainee="
-        + trainee
-        + ",\ntrainer="
-        + trainer
-        + ",\ntrainingType="
-        + trainingType
-        + '}';
-  }
 }

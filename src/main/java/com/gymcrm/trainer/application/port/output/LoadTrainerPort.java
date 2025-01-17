@@ -5,9 +5,15 @@ import java.util.List;
 import java.util.UUID;
 
 public interface LoadTrainerPort {
-  Trainer findById(UUID id);
+  Trainer findByIdWithTrainees(UUID id);
+
+  List<Trainer> findAllByUsernames(List<String> usernames);
+
+  Trainer findByUsernameWithTrainees(String username);
+
+  Trainer findByUsername(String username);
 
   List<Trainer> findAll();
 
-  List<Trainer> findTrainersNotAssignedToTrainee(String trainerName);
+  List<Trainer> findActiveTrainersNotAssignedToTrainee(String traineeUsername);
 }

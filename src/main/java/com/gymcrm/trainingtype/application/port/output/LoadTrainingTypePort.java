@@ -1,10 +1,10 @@
 package com.gymcrm.trainingtype.application.port.output;
 
 import com.gymcrm.trainingtype.domain.TrainingType;
-import java.util.UUID;
+import java.util.List;
 
 public interface LoadTrainingTypePort {
-  TrainingType findById(UUID id);
+  List<TrainingType> findAll();
 
   TrainingType findByTrainingTypeName(String trainingTypeName);
 }

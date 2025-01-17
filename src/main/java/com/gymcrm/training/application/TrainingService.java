@@ -1,7 +1,10 @@
 package com.gymcrm.training.application;
 
-import com.gymcrm.trainee.application.port.input.TraineeUpdateUseCase;
-import com.gymcrm.trainee.application.port.input.UpdateTraineeCommand;
+import com.gymcrm.trainee.application.exception.TraineeNotFoundException;
+import com.gymcrm.trainee.application.port.output.LoadTraineePort;
+import com.gymcrm.trainee.application.port.output.UpdateTraineePort;
+import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
+import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
 import com.gymcrm.training.application.factory.TrainingFactory;
 import com.gymcrm.training.application.port.input.CreateTrainingCommand;
 import com.gymcrm.training.application.port.input.LoadTrainingUseCase;
@@ -9,13 +12,15 @@ import com.gymcrm.training.application.port.input.TrainingCreationUseCase;
 import com.gymcrm.training.application.port.output.LoadTrainingPort;
 import com.gymcrm.training.application.port.output.UpdateTrainingPort;
 import com.gymcrm.training.domain.Training;
+import com.gymcrm.trainingtype.application.port.output.LoadTrainingTypePort;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TrainingService implements TrainingCreationUseCase, LoadTrainingUseCase {
@@ -24,28 +29,52 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
   private final UpdateTrainingPort updateTrainingPort;
   private final LoadTrainingPort loadTrainingPort;
   private final TrainingFactory trainingFactory;
-  private final TraineeUpdateUseCase traineeUpdateUseCase;
+  private final LoadTraineePort loadTraineePort;
+  private final LoadTrainerPort loadTrainerPort;
+  private final UpdateTraineePort updateTraineePort;
+  private final LoadTrainingTypePort loadTrainingTypePort;
 
   @Autowired
   public TrainingService(
       UpdateTrainingPort updateTrainingPort,
       LoadTrainingPort loadTrainingPort,
       TrainingFactory trainingFactory,
-      TraineeUpdateUseCase traineeUpdateUseCase) {
+      LoadTraineePort loadTraineePort,
+      LoadTrainerPort loadTrainerPort,
+      UpdateTraineePort updateTraineePort,
+      LoadTrainingTypePort loadTrainingTypePort) {
     this.updateTrainingPort = updateTrainingPort;
     this.loadTrainingPort = loadTrainingPort;
     this.trainingFactory = trainingFactory;
-    this.traineeUpdateUseCase = traineeUpdateUseCase;
+    this.loadTraineePort = loadTraineePort;
+    this.loadTrainerPort = loadTrainerPort;
+    this.updateTraineePort = updateTraineePort;
+    this.loadTrainingTypePort = loadTrainingTypePort;
   }
 
+  @Transactional
   @Override
   public void create(CreateTrainingCommand command) {
-    logger.debug("Creating training with name: {}", command.getTrainingName());
     try {
+      var trainee = loadTraineePort.findByUsername(command.getTraineeUsername());
+      command.setTrainee(trainee);
+
+      var trainer = loadTrainerPort.findByUsername(command.getTrainerUsername());
+      command.setTrainer(trainer);
+
+      var trainingType = loadTrainingTypePort.findByTrainingTypeName(command.getTrainingName());
+      command.setTrainingType(trainingType);
+
       Training training = trainingFactory.createFrom(command);
-      traineeUpdateUseCase.updateTrainersOfTrainee(new UpdateTraineeCommand(training));
+
+      if (trainee.getTrainers() == null) trainee.setTrainers(new ArrayList<>());
+      trainee.getTrainers().add(trainer);
+
+      updateTraineePort.save(trainee);
       updateTrainingPort.save(training);
-      logger.info("Training with name: {} created successfully", command.getTrainingName());
+    } catch (TraineeNotFoundException | TrainerNotFoundException e) {
+      logger.warn("Trainee or Trainer not found: {}", e.getMessage(), e);
+      throw e;
     } catch (Exception e) {
       logger.error(
           "Error creating training with name: {}, Reason: {}",
@@ -53,21 +82,6 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
           e.getMessage(),
           e);
       throw new RuntimeException("Failed to create training", e);
-    }
-  }
-
-  @Override
-  public Training loadById(UUID trainingId) {
-    if (trainingId == null) {
-      throw new IllegalArgumentException("Training ID cannot be null.");
-    }
-    logger.debug("Fetching training with ID: {}", trainingId);
-    try {
-      return loadTrainingPort.findById(trainingId);
-    } catch (Exception e) {
-      logger.error(
-          "Error fetching training with ID: {}, Reason: {}", trainingId, e.getMessage(), e);
-      throw new RuntimeException("Failed to fetch training by ID", e);
     }
   }
 
@@ -84,16 +98,17 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 
   @Override
   public List<Training> findTraineeTrainingsByCriteria(
-      LocalDate startDate, LocalDate endDate, String trainerName, String trainingType) {
-    logger.debug(
-        "Fetching trainings with criteria: startDate={}, endDate={}, trainerName={}, trainingType={}",
-        startDate,
-        endDate,
-        trainerName,
-        trainingType);
+      String username,
+      LocalDate startDate,
+      LocalDate endDate,
+      String trainerName,
+      String trainingType) {
     try {
       return loadTrainingPort.findTraineeTrainingsByCriteria(
-          startDate, endDate, trainerName, trainingType);
+          username, startDate, endDate, trainerName, trainingType);
+    } catch (TraineeNotFoundException e) {
+      logger.warn("Trainee not found: {}", e.getMessage(), e);
+      throw e;
     } catch (Exception e) {
       logger.error("Error fetching trainings by criteria, Reason: {}", e.getMessage(), e);
       throw new RuntimeException("Failed to fetch trainings by criteria", e);
@@ -102,17 +117,16 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 
   @Override
   public List<Training> findTrainerTrainingsByCriteria(
-      LocalDate startDate, LocalDate endDate, String traineeName) {
-    logger.debug(
-        "Fetching trainings for trainer with criteria: startDate={}, endDate={}, traineeName={}",
-        startDate,
-        endDate,
-        traineeName);
+      String username, LocalDate startDate, LocalDate endDate, String traineeName) {
     try {
-      return loadTrainingPort.findTrainerTrainingsByCriteria(startDate, endDate, traineeName);
+      return loadTrainingPort.findTrainerTrainingsByCriteria(
+          username, startDate, endDate, traineeName);
+    } catch (TrainerNotFoundException e) {
+      logger.warn("Trainer not found: {}", e.getMessage(), e);
+      throw e;
     } catch (Exception e) {
-      logger.error("Error fetching trainer trainings by criteria, Reason: {}", e.getMessage(), e);
-      throw new RuntimeException("Failed to fetch trainer trainings by criteria", e);
+      logger.error("Error fetching trainings by criteria, Reason: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to fetch trainings by criteria", e);
     }
   }
 }

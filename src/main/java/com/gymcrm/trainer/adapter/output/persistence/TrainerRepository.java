@@ -19,13 +19,32 @@ public class TrainerRepository implements UpdateTrainerPort, LoadTrainerPort {
   }
 
   @Override
-  public void save(Trainer trainer) {
-    repository.save(trainer);
+  public Trainer save(Trainer trainer) {
+    return repository.save(trainer);
   }
 
   @Override
-  public Trainer findById(UUID id) {
-    return repository.findById(id).orElseThrow(() -> TrainerNotFoundException.by(id));
+  public Trainer findByIdWithTrainees(UUID id) {
+    return repository.findByIdWithTrainees(id).orElseThrow(() -> TrainerNotFoundException.by(id));
+  }
+
+  @Override
+  public List<Trainer> findAllByUsernames(List<String> usernames) {
+    return repository.findAllByUsernames(usernames);
+  }
+
+  @Override
+  public Trainer findByUsernameWithTrainees(String username) {
+    return repository
+        .findByUsernameWithTrainees(username)
+        .orElseThrow(() -> TrainerNotFoundException.by(username));
+  }
+
+  @Override
+  public Trainer findByUsername(String username) {
+    return repository
+        .findByUserUsername(username)
+        .orElseThrow(() -> TrainerNotFoundException.by(username));
   }
 
   @Override
@@ -34,7 +53,7 @@ public class TrainerRepository implements UpdateTrainerPort, LoadTrainerPort {
   }
 
   @Override
-  public List<Trainer> findTrainersNotAssignedToTrainee(String trainerName) {
-    return repository.findTrainersNotAssignedToTrainee(trainerName);
+  public List<Trainer> findActiveTrainersNotAssignedToTrainee(String traineeUsername) {
+    return repository.findActiveTrainersNotAssignedToTrainee(traineeUsername);
   }
 }

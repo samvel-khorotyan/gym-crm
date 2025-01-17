@@ -1,20 +1,13 @@
 package com.gymcrm.trainee.application.port.input;
 
-import java.util.Map;
-import java.util.UUID;
+import com.gymcrm.trainee.domain.Trainee;
 
 public interface TraineeUpdateUseCase {
-  void update(UpdateTraineeCommand command);
+  Trainee update(UpdateTraineeCommand command);
 
-  void updatePassword(UpdateTraineePasswordCommand command);
+  Trainee updateTraineeTrainers(UpdateTraineeTrainersCommand command);
 
-  void updateTrainersOfTrainee(UUID traineeId, Map<UUID, UUID> trainerToTrainingMap);
-
-  void updateTrainersOfTrainee(UpdateTraineeCommand command);
-
-  boolean activateDeactivate(UUID traineeId);
-
-  void deleteById(UUID id);
+  void activateDeactivate(ActivateDeactivateTraineeCommand command);
 
   void deleteByUsername(String username);
 }

@@ -3,26 +3,25 @@ package com.gymcrm.trainee.domain;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.domain.Training;
 import com.gymcrm.user.domain.User;
-import com.gymcrm.util.UUIDCharType;
-import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
 
-@Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
 @Entity
 @Table(name = "trainee")
+@AllArgsConstructor
+@NoArgsConstructor
 public class Trainee {
   @Id
-  @Type(value = UUIDCharType.class)
+  @Type(type = "uuid-char")
   private UUID id;
 
   @Column(name = "date_of_birth ")
@@ -53,32 +52,5 @@ public class Trainee {
     this.dateOfBirth = dateOfBirth;
     this.address = address;
     this.user = user;
-  }
-
-  @Override
-  public String toString() {
-    return "Trainee{"
-        + "id="
-        + id
-        + ", dateOfBirth="
-        + dateOfBirth
-        + ", address='"
-        + address
-        + '\''
-        + ", firstName='"
-        + user.getFirstName()
-        + '\''
-        + ", lastName='"
-        + user.getLastName()
-        + '\''
-        + ", username='"
-        + user.getUsername()
-        + '\''
-        + ", password='"
-        + user.getPassword()
-        + '\''
-        + ", isActive="
-        + user.getIsActive()
-        + '}';
   }
 }

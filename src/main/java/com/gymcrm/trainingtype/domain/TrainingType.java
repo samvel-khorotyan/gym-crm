@@ -1,8 +1,10 @@
 package com.gymcrm.trainingtype.domain;
 
-import com.gymcrm.util.UUIDCharType;
-import jakarta.persistence.*;
 import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import lombok.*;
 import org.hibernate.annotations.Type;
 
@@ -15,7 +17,7 @@ import org.hibernate.annotations.Type;
 @Table(name = "training_type")
 public class TrainingType {
   @Id
-  @Type(value = UUIDCharType.class)
+  @Type(type = "uuid-char")
   private UUID id;
 
   @Column(name = "training_type_name ", nullable = false, unique = true)

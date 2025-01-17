@@ -13,8 +13,9 @@ public class CreateUserCommand {
   String password;
   UserType userType;
 
-  public CreateUserCommand(String firstName, String lastName) {
+  public CreateUserCommand(String firstName, String lastName, UserType userType) {
     this.firstName = firstName;
     this.lastName = lastName;
+    this.userType = userType;
   }
 }

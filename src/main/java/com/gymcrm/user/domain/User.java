@@ -2,9 +2,8 @@ package com.gymcrm.user.domain;
 
 import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.domain.Trainer;
-import com.gymcrm.util.UUIDCharType;
-import jakarta.persistence.*;
 import java.util.UUID;
+import javax.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
 
@@ -17,7 +16,7 @@ import org.hibernate.annotations.Type;
 @Table(name = "user")
 public class User {
   @Id
-  @Type(value = UUIDCharType.class)
+  @Type(type = "uuid-char")
   private UUID id;
 
   @Column(name = "first_name", nullable = false)
@@ -45,6 +44,14 @@ public class User {
   @OneToOne(mappedBy = "user")
   private Trainer trainer;
 
+  public UUID getId() {
+    return id;
+  }
+
+  public void setId(UUID id) {
+    this.id = id;
+  }
+
   public User(
       UUID id,
       String firstName,
@@ -59,6 +66,12 @@ public class User {
     this.username = username;
     this.password = password;
     this.isActive = isActive;
+    this.userType = userType;
+  }
+
+  public User(String username, String password, UserType userType) {
+    this.username = username;
+    this.password = password;
     this.userType = userType;
   }
 }

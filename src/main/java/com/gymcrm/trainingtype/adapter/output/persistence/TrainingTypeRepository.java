@@ -4,7 +4,7 @@ import com.gymcrm.trainingtype.application.exception.TrainingTypeNotFoundExcepti
 import com.gymcrm.trainingtype.application.port.output.LoadTrainingTypePort;
 import com.gymcrm.trainingtype.application.port.output.UpdateTrainingTypePort;
 import com.gymcrm.trainingtype.domain.TrainingType;
-import java.util.UUID;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -23,8 +23,8 @@ public class TrainingTypeRepository implements UpdateTrainingTypePort, LoadTrain
   }
 
   @Override
-  public TrainingType findById(UUID id) {
-    return repository.findById(id).orElseThrow(() -> TrainingTypeNotFoundException.by(id));
+  public List<TrainingType> findAll() {
+    return repository.findAll();
   }
 
   @Override
