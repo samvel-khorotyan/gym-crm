@@ -3,10 +3,13 @@ package com.gymcrm.trainer.adapter.input.web.response;
 import com.gymcrm.trainer.domain.Trainer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.springframework.hateoas.RepresentationModel;
 
 @Data
 @AllArgsConstructor
-public class TrainerLightResponse {
+@EqualsAndHashCode(callSuper = true)
+public class TrainerLightResponse extends RepresentationModel<TrainerUserDetailsResponse> {
   private String firstName;
   private String lastName;
 

@@ -18,7 +18,7 @@ public class TrainingController {
     this.trainingCreationUseCase = trainingCreationUseCase;
   }
 
-  @PostMapping("/trainings")
+  @PostMapping("/users/me/trainings")
   @Authenticated
   @RequiresPermission({"CREATE_TRAINING"})
   @ResponseStatus(HttpStatus.CREATED)
@@ -27,13 +27,13 @@ public class TrainingController {
       notes = "Creates a new training session based on the provided details.")
   @ApiImplicitParams({
     @ApiImplicitParam(
-        name = "authUsername",
+        name = "auth_username",
         value = "Authentication username",
         required = true,
         paramType = "header",
         dataType = "string"),
     @ApiImplicitParam(
-        name = "authPassword",
+        name = "auth_password",
         value = "Authentication password",
         required = true,
         paramType = "header",

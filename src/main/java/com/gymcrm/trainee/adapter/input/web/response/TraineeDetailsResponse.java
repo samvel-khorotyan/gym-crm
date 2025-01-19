@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.springframework.hateoas.RepresentationModel;
 
 @Data
 @AllArgsConstructor
-public class TraineeDetailsResponse {
+@EqualsAndHashCode(callSuper = true)
+public class TraineeDetailsResponse extends RepresentationModel<TraineeDetailsResponse> {
   private String username;
   private String firstName;
   private String lastName;

@@ -20,7 +20,7 @@ public class TrainingTypeController {
     this.loadTrainingTypeUseCase = loadTrainingTypeUseCase;
   }
 
-  @GetMapping("/training-types")
+  @GetMapping("/users/me/training-types")
   @Authenticated
   @RequiresPermission({"VIEW_TRAINING_TYPES"})
   @ResponseStatus(HttpStatus.OK)
@@ -29,13 +29,13 @@ public class TrainingTypeController {
       notes = "Returns a list of all available training types.")
   @ApiImplicitParams({
     @ApiImplicitParam(
-        name = "authUsername",
+        name = "auth_username",
         value = "Authentication username",
         required = true,
         paramType = "header",
         dataType = "string"),
     @ApiImplicitParam(
-        name = "authPassword",
+        name = "auth_password",
         value = "Authentication password",
         required = true,
         paramType = "header",

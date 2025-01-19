@@ -3,12 +3,15 @@ package com.gymcrm.trainee.adapter.input.web.response;
 import com.gymcrm.trainee.domain.Trainee;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.springframework.hateoas.RepresentationModel;
 
 @Data
 @AllArgsConstructor
-public class TraineeLightResponse {
-  String username;
-  String password;
+@EqualsAndHashCode(callSuper = true)
+public class TraineeLightResponse extends RepresentationModel<TraineeLightResponse> {
+  private String username;
+  private String password;
 
   public static TraineeLightResponse from(Trainee trainee) {
     return new TraineeLightResponse(

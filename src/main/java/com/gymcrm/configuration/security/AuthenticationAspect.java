@@ -80,8 +80,8 @@ public class AuthenticationAspect {
     }
 
     HttpServletRequest request = attributes.getRequest();
-    String username = request.getHeader("authUsername");
-    String password = request.getHeader("authPassword");
+    String username = request.getHeader("auth_username");
+    String password = request.getHeader("auth_password");
 
     if (username == null || password == null) {
       throw new UnauthorizedException("Missing username or password in headers.");

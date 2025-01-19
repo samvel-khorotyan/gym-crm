@@ -12,6 +12,7 @@ import com.gymcrm.trainee.adapter.input.web.response.TraineeTrainingsResponse;
 import com.gymcrm.trainee.application.port.input.LoadTraineeUseCase;
 import com.gymcrm.trainee.application.port.input.TraineeCreationUseCase;
 import com.gymcrm.trainee.application.port.input.TraineeUpdateUseCase;
+import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.adapter.input.web.response.TrainerUserDetailsResponse;
 import com.gymcrm.training.application.port.input.LoadTrainingUseCase;
 import io.swagger.annotations.*;
@@ -20,7 +21,10 @@ import java.util.List;
 import java.util.UUID;
 import javax.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.hateoas.RepresentationModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -42,7 +46,7 @@ public class TraineeController {
     this.loadTraineeUseCase = loadTraineeUseCase;
   }
 
-  @PostMapping("/trainees")
+  @PostMapping("/users/me/trainees")
   @ResponseStatus(HttpStatus.CREATED)
   @ApiOperation(value = "Create Trainee", notes = "Registers a new trainee in the system")
   @ApiResponses({
@@ -52,23 +56,30 @@ public class TraineeController {
   public TraineeLightResponse create(
       @ApiParam(value = "Trainee creation details", required = true) @RequestBody @Valid
           TraineeCreateRequest request) {
-    return TraineeLightResponse.from(traineeCreationUseCase.create(request.toCommand()));
+    Trainee trainee = traineeCreationUseCase.create(request.toCommand());
+    TraineeLightResponse response = TraineeLightResponse.from(trainee);
+    String username = trainee.getUser().getUsername();
+    addGetLink(response, username, null);
+    addUpdateLink(response, trainee.getId(), null);
+    addDeleteLink(response, username, null);
+
+    return response;
   }
 
-  @GetMapping("/trainees")
+  @GetMapping("/users/me/trainees")
   @Authenticated
   @RequiresPermission({"VIEW_TRAINEES"})
   @ResponseStatus(HttpStatus.OK)
   @ApiOperation(value = "Get Trainee", notes = "Fetches trainee details by username")
   @ApiImplicitParams({
     @ApiImplicitParam(
-        name = "authUsername",
+        name = "auth_username",
         value = "Authentication username",
         required = true,
         paramType = "header",
         dataType = "string"),
     @ApiImplicitParam(
-        name = "authPassword",
+        name = "auth_password",
         value = "Authentication password",
         required = true,
         paramType = "header",
@@ -83,24 +94,29 @@ public class TraineeController {
       @ApiParam(value = "Trainee username to fetch details", required = true)
           @RequestParam("username")
           String username) {
+    Trainee trainee = loadTraineeUseCase.loadByUsername(username);
+    TraineeResponse response = TraineeResponse.from(trainee);
+    addGetLink(response, trainee.getUser().getUsername(), "self");
+    addUpdateLink(response, trainee.getId(), null);
+    addDeleteLink(response, trainee.getUser().getUsername(), null);
 
-    return TraineeResponse.from(loadTraineeUseCase.loadByUsername(username));
+    return response;
   }
 
-  @PutMapping("/trainees/{traineeId}")
+  @PutMapping("/users/me/trainees/{traineeId}")
   @Authenticated
   @RequiresPermission({"UPDATE_TRAINEES"})
   @ResponseStatus(HttpStatus.OK)
   @ApiOperation(value = "Update Trainee", notes = "Updates an existing trainee's details")
   @ApiImplicitParams({
     @ApiImplicitParam(
-        name = "authUsername",
+        name = "auth_username",
         value = "Authentication username",
         required = true,
         paramType = "header",
         dataType = "string"),
     @ApiImplicitParam(
-        name = "authPassword",
+        name = "auth_password",
         value = "Authentication password",
         required = true,
         paramType = "header",
@@ -115,23 +131,27 @@ public class TraineeController {
       @ApiParam(value = "Trainee ID", required = true) @PathVariable UUID traineeId,
       @ApiParam(value = "Trainee update details", required = true) @RequestBody @Valid
           TraineeUpdateRequest request) {
-    return TraineeResponse.from(traineeUpdateUseCase.update(request.toCommand(traineeId)));
+    Trainee trainee = traineeUpdateUseCase.update(request.toCommand(traineeId));
+    TraineeResponse response = TraineeResponse.from(trainee);
+    addGetLink(response, trainee.getUser().getUsername(), null);
+    addDeleteLink(response, trainee.getUser().getUsername(), null);
+
+    return response;
   }
 
-  @DeleteMapping("/trainees")
+  @DeleteMapping("/users/me/trainees")
   @Authenticated
   @RequiresPermission({"DELETE_TRAINEES"})
-  @ResponseStatus(HttpStatus.NO_CONTENT)
   @ApiOperation(value = "Delete Trainee", notes = "Deletes a trainee by username")
   @ApiImplicitParams({
     @ApiImplicitParam(
-        name = "authUsername",
+        name = "auth_username",
         value = "Authentication username",
         required = true,
         paramType = "header",
         dataType = "string"),
     @ApiImplicitParam(
-        name = "authPassword",
+        name = "auth_password",
         value = "Authentication password",
         required = true,
         paramType = "header",
@@ -141,30 +161,32 @@ public class TraineeController {
     @ApiResponse(code = 204, message = "Trainee deleted successfully"),
     @ApiResponse(code = 404, message = "Trainee not found")
   })
-  public void deleteByUsername(
+  public ResponseEntity<RepresentationModel<?>> deleteByUsername(
       @ApiParam(value = "Username of the trainee to be deleted", required = true)
           @RequestParam("username")
           String username) {
-
     traineeUpdateUseCase.deleteByUsername(username);
+    RepresentationModel<?> model = new RepresentationModel<>();
+    addCreateLink(model, null);
+
+    return ResponseEntity.noContent().header("Links", model.getLinks().toString()).build();
   }
 
-  @PutMapping("/trainees/trainers")
+  @PutMapping("/users/me/trainees/trainers")
   @Authenticated
   @RequiresPermission({"UPDATE_TRAINEE_TRAINERS"})
-  @ResponseStatus(HttpStatus.OK)
   @ApiOperation(
       value = "Update trainers assigned to a trainee",
       notes = "Updates the list of trainers assigned to a specific trainee.")
   @ApiImplicitParams({
     @ApiImplicitParam(
-        name = "authUsername",
+        name = "auth_username",
         value = "Authentication username",
         required = true,
         paramType = "header",
         dataType = "string"),
     @ApiImplicitParam(
-        name = "authPassword",
+        name = "auth_password",
         value = "Authentication password",
         required = true,
         paramType = "header",
@@ -175,17 +197,24 @@ public class TraineeController {
     @ApiResponse(code = 400, message = "Invalid request or validation failed."),
     @ApiResponse(code = 404, message = "Trainee or trainers not found.")
   })
-  public List<TrainerUserDetailsResponse> updateTraineeTrainers(
+  public ResponseEntity<List<TrainerUserDetailsResponse>> updateTraineeTrainers(
       @ApiParam(value = "Details of the trainee and trainers to update", required = true)
           @RequestBody
           @Valid
           TraineeTrainersUpdateRequest request) {
+    List<TrainerUserDetailsResponse> responses =
+        TrainerUserDetailsResponse.from(
+            traineeUpdateUseCase.updateTraineeTrainers(request.toCommand()).getTrainers());
+    responses.forEach(
+        response -> {
+          addUpdateTraineeTrainersLink(response, null);
+          addGetLink(response, response.getUsername(), null);
+        });
 
-    return TrainerUserDetailsResponse.from(
-        traineeUpdateUseCase.updateTraineeTrainers(request.toCommand()).getTrainers());
+    return ResponseEntity.ok(responses);
   }
 
-  @GetMapping("/trainees/trainings")
+  @GetMapping("/users/me/trainees/trainings")
   @Authenticated
   @RequiresPermission({"VIEW_TRAINEES_TRAININGS"})
   @ResponseStatus(HttpStatus.OK)
@@ -194,13 +223,13 @@ public class TraineeController {
       notes = "Returns a list of trainings for a specific trainee based on the provided criteria.")
   @ApiImplicitParams({
     @ApiImplicitParam(
-        name = "authUsername",
+        name = "auth_username",
         value = "Authentication username",
         required = true,
         paramType = "header",
         dataType = "string"),
     @ApiImplicitParam(
-        name = "authPassword",
+        name = "auth_password",
         value = "Authentication password",
         required = true,
         paramType = "header",
@@ -232,12 +261,23 @@ public class TraineeController {
       @ApiParam(value = "Training type for filtering trainings")
           @RequestParam(value = "training_type", required = false)
           String trainingType) {
-    return TraineeTrainingsResponse.from(
-        loadTrainingUseCase.findTraineeTrainingsByCriteria(
-            username, periodFrom, periodTo, trainerName, trainingType));
+    List<TraineeTrainingsResponse> responses =
+        TraineeTrainingsResponse.from(
+            loadTrainingUseCase.findTraineeTrainingsByCriteria(
+                username, periodFrom, periodTo, trainerName, trainingType));
+
+    responses.forEach(
+        response -> {
+          addGetTraineeTrainingsLink(
+              response, username, periodFrom, periodTo, trainerName, trainingType, "self");
+          addUpdateTraineeTrainersLink(response, null);
+          addCreateLink(response, null);
+        });
+
+    return responses;
   }
 
-  @PatchMapping("/trainees/state")
+  @PatchMapping("/users/me/trainees/state")
   @Authenticated
   @RequiresPermission({"UPDATE_TRAINEE_STATE"})
   @ResponseStatus(HttpStatus.OK)
@@ -247,13 +287,13 @@ public class TraineeController {
           "Allows updating specific state properties of a trainee, such as active status or custom states.")
   @ApiImplicitParams({
     @ApiImplicitParam(
-        name = "authUsername",
+        name = "auth_username",
         value = "Authentication username",
         required = true,
         paramType = "header",
         dataType = "string"),
     @ApiImplicitParam(
-        name = "authPassword",
+        name = "auth_password",
         value = "Authentication password",
         required = true,
         paramType = "header",
@@ -267,10 +307,81 @@ public class TraineeController {
         code = 403,
         message = "Forbidden. You do not have permission to perform this action.")
   })
-  public void updateTraineeState(
+  public ResponseEntity<Void> updateTraineeState(
       @ApiParam(value = "Request to update trainee state", required = true) @RequestBody @Valid
           TraineeActivateDeactivateRequest request) {
-
     traineeUpdateUseCase.activateDeactivate(request.toCommand());
+
+    RepresentationModel<?> response = new RepresentationModel<>();
+    addUpdateTraineeStateLink(response, "self");
+    addGetLink(response, request.getUsername(), null);
+    addDeleteLink(response, request.getUsername(), null);
+
+    return ResponseEntity.noContent().header("Links", response.getLinks().toString()).build();
+  }
+
+  private void addCreateLink(RepresentationModel<?> response, String self) {
+    response.add(
+        WebMvcLinkBuilder.linkTo(
+                WebMvcLinkBuilder.methodOn(TraineeController.class)
+                    .create(new TraineeCreateRequest()))
+            .withRel(defineMethodName(self, "create")));
+  }
+
+  private void addGetLink(RepresentationModel<?> response, String username, String self) {
+    response.add(
+        WebMvcLinkBuilder.linkTo(
+                WebMvcLinkBuilder.methodOn(TraineeController.class).getByUsername(username))
+            .withRel(defineMethodName(self, "get")));
+  }
+
+  private void addUpdateLink(RepresentationModel<?> response, UUID traineeId, String self) {
+    response.add(
+        WebMvcLinkBuilder.linkTo(
+                WebMvcLinkBuilder.methodOn(TraineeController.class)
+                    .update(traineeId, new TraineeUpdateRequest()))
+            .withRel(defineMethodName(self, "update")));
+  }
+
+  private void addDeleteLink(RepresentationModel<?> response, String username, String self) {
+    response.add(
+        WebMvcLinkBuilder.linkTo(
+                WebMvcLinkBuilder.methodOn(TraineeController.class).deleteByUsername(username))
+            .withRel(defineMethodName(self, "delete")));
+  }
+
+  private void addUpdateTraineeTrainersLink(RepresentationModel<?> response, String self) {
+    response.add(
+        WebMvcLinkBuilder.linkTo(
+                WebMvcLinkBuilder.methodOn(TraineeController.class)
+                    .updateTraineeTrainers(new TraineeTrainersUpdateRequest()))
+            .withRel(defineMethodName(self, "update trainee trainers")));
+  }
+
+  private void addGetTraineeTrainingsLink(
+      RepresentationModel<?> response,
+      String username,
+      LocalDate periodFrom,
+      LocalDate periodTo,
+      String trainerName,
+      String trainingType,
+      String self) {
+    response.add(
+        WebMvcLinkBuilder.linkTo(
+                WebMvcLinkBuilder.methodOn(TraineeController.class)
+                    .getTraineeTrainings(username, periodFrom, periodTo, trainerName, trainingType))
+            .withRel(defineMethodName(self, "get trainee trainings")));
+  }
+
+  private void addUpdateTraineeStateLink(RepresentationModel<?> response, String self) {
+    response.add(
+        WebMvcLinkBuilder.linkTo(
+                WebMvcLinkBuilder.methodOn(TraineeController.class)
+                    .updateTraineeState(new TraineeActivateDeactivateRequest()))
+            .withRel(defineMethodName(self, "update trainee state")));
+  }
+
+  private String defineMethodName(String self, String name) {
+    return self == null ? name : self;
   }
 }
