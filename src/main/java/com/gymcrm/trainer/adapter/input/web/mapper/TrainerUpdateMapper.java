@@ -7,5 +7,5 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface TrainerUpdateMapper {
-  void updateTrainerFromCommand(UpdateTrainerCommand command, @MappingTarget Trainer trainer);
+	void updateTrainerFromCommand(UpdateTrainerCommand command, @MappingTarget Trainer trainer);
 }

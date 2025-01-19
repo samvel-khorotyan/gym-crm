@@ -10,11 +10,10 @@ import org.springframework.hateoas.RepresentationModel;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class TrainerLightResponse extends RepresentationModel<TrainerUserDetailsResponse> {
-  private String firstName;
-  private String lastName;
+	private String firstName;
+	private String lastName;
 
-  public static TrainerLightResponse from(Trainer trainer) {
-    return new TrainerLightResponse(
-        trainer.getUser().getFirstName(), trainer.getUser().getLastName());
-  }
+	public static TrainerLightResponse from(Trainer trainer) {
+		return new TrainerLightResponse(trainer.getUser().getFirstName(), trainer.getUser().getLastName());
+	}
 }

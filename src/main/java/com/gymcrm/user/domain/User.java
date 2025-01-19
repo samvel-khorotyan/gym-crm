@@ -15,63 +15,57 @@ import org.hibernate.annotations.Type;
 @Entity
 @Table(name = "user")
 public class User {
-  @Id
-  @Type(type = "uuid-char")
-  private UUID id;
+	@Id
+	@Type(type = "uuid-char")
+	private UUID id;
 
-  @Column(name = "first_name", nullable = false)
-  private String firstName;
+	@Column(name = "first_name",nullable = false)
+	private String firstName;
 
-  @Column(name = "last_name", nullable = false)
-  private String lastName;
+	@Column(name = "last_name",nullable = false)
+	private String lastName;
 
-  @Column(nullable = false, unique = true)
-  private String username;
+	@Column(nullable = false,unique = true)
+	private String username;
 
-  @Column(nullable = false)
-  private String password;
+	@Column(nullable = false)
+	private String password;
 
-  @Column(name = "is_active", nullable = false)
-  private Boolean isActive;
+	@Column(name = "is_active",nullable = false)
+	private Boolean isActive;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "user_type", nullable = false)
-  private UserType userType;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "user_type",nullable = false)
+	private UserType userType;
 
-  @OneToOne(mappedBy = "user")
-  private Trainee trainee;
+	@OneToOne(mappedBy = "user")
+	private Trainee trainee;
 
-  @OneToOne(mappedBy = "user")
-  private Trainer trainer;
+	@OneToOne(mappedBy = "user")
+	private Trainer trainer;
 
-  public UUID getId() {
-    return id;
-  }
+	public UUID getId() {
+		return id;
+	}
 
-  public void setId(UUID id) {
-    this.id = id;
-  }
+	public void setId(UUID id) {
+		this.id = id;
+	}
 
-  public User(
-      UUID id,
-      String firstName,
-      String lastName,
-      String username,
-      String password,
-      Boolean isActive,
-      UserType userType) {
-    this.id = id;
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.username = username;
-    this.password = password;
-    this.isActive = isActive;
-    this.userType = userType;
-  }
+	public User(UUID id, String firstName, String lastName, String username, String password, Boolean isActive,
+	        UserType userType) {
+		this.id = id;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.username = username;
+		this.password = password;
+		this.isActive = isActive;
+		this.userType = userType;
+	}
 
-  public User(String username, String password, UserType userType) {
-    this.username = username;
-    this.password = password;
-    this.userType = userType;
-  }
+	public User(String username, String password, UserType userType) {
+		this.username = username;
+		this.password = password;
+		this.userType = userType;
+	}
 }

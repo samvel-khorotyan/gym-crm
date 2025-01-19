@@ -23,83 +23,79 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Aspect
 @Component
 public class AuthenticationAspect {
-  private final AuthenticationUseCase authenticationUseCase;
-  private final LoadUserUseCase loadUserUseCase;
-  private final RequestContext requestContext;
+	private final AuthenticationUseCase authenticationUseCase;
+	private final LoadUserUseCase loadUserUseCase;
+	private final RequestContext requestContext;
 
-  @Autowired
-  public AuthenticationAspect(
-      AuthenticationUseCase authenticationUseCase,
-      LoadUserUseCase loadUserUseCase,
-      RequestContext requestContext) {
-    this.authenticationUseCase = authenticationUseCase;
-    this.loadUserUseCase = loadUserUseCase;
-    this.requestContext = requestContext;
-  }
+	@Autowired
+	public AuthenticationAspect(AuthenticationUseCase authenticationUseCase, LoadUserUseCase loadUserUseCase,
+	        RequestContext requestContext) {
+		this.authenticationUseCase = authenticationUseCase;
+		this.loadUserUseCase = loadUserUseCase;
+		this.requestContext = requestContext;
+	}
 
-  /** Authenticates incoming requests annotated with @Authenticated. */
-  @Before("@annotation(com.gymcrm.configuration.security.Authenticated)")
-  public void authenticateRequest() {
-    authenticateAndLoadUser();
-  }
+	/** Authenticates incoming requests annotated with @Authenticated. */
+	@Before("@annotation(com.gymcrm.configuration.security.Authenticated)")
+	public void authenticateRequest() {
+		authenticateAndLoadUser();
+	}
 
-  /** Checks permissions for methods annotated with @RequiresPermission. */
-  @Before("@annotation(RequiresPermission)")
-  public void checkPermissions(org.aspectj.lang.JoinPoint joinPoint) {
-    User user = authenticateAndLoadUser();
+	/** Checks permissions for methods annotated with @RequiresPermission. */
+	@Before("@annotation(RequiresPermission)")
+	public void checkPermissions(org.aspectj.lang.JoinPoint joinPoint) {
+		User user = authenticateAndLoadUser();
 
-    MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-    Method method = signature.getMethod();
+		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+		Method method = signature.getMethod();
 
-    RequiresPermission requiresPermission = method.getAnnotation(RequiresPermission.class);
-    if (requiresPermission == null) {
-      return;
-    }
+		RequiresPermission requiresPermission = method.getAnnotation(RequiresPermission.class);
+		if (requiresPermission == null) {
+			return;
+		}
 
-    String[] requiredPermissions = requiresPermission.value();
+		String[] requiredPermissions = requiresPermission.value();
 
-    boolean hasPermission =
-        Arrays.stream(requiredPermissions)
-            .allMatch(permission -> roleHasPermission(user.getUserType(), permission));
+		boolean hasPermission = Arrays.stream(requiredPermissions)
+		        .allMatch(permission -> roleHasPermission(user.getUserType(), permission));
 
-    if (!hasPermission) {
-      throw new ForbiddenException(
-          formattedRole(user)
-              + " does not have required permissions: "
-              + Arrays.toString(requiredPermissions));
-    }
-  }
+		if (!hasPermission) {
+			throw new ForbiddenException(formattedRole(user) + " does not have required permissions: "
+			        + Arrays.toString(requiredPermissions));
+		}
+	}
 
-  /** Authenticates the request, loads the user, and updates the request context. */
-  private User authenticateAndLoadUser() {
-    ServletRequestAttributes attributes =
-        (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+	/**
+	 * Authenticates the request, loads the user, and updates the request context.
+	 */
+	private User authenticateAndLoadUser() {
+		ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
-    if (attributes == null) {
-      throw new UnauthorizedException("Unable to retrieve request attributes.");
-    }
+		if (attributes == null) {
+			throw new UnauthorizedException("Unable to retrieve request attributes.");
+		}
 
-    HttpServletRequest request = attributes.getRequest();
-    String username = request.getHeader("auth_username");
-    String password = request.getHeader("auth_password");
+		HttpServletRequest request = attributes.getRequest();
+		String username = request.getHeader("auth_username");
+		String password = request.getHeader("auth_password");
 
-    if (username == null || password == null) {
-      throw new UnauthorizedException("Missing username or password in headers.");
-    }
+		if (username == null || password == null) {
+			throw new UnauthorizedException("Missing username or password in headers.");
+		}
 
-    authenticationUseCase.authenticate(username, password);
-    requestContext.setUsername(username);
+		authenticationUseCase.authenticate(username, password);
+		requestContext.setUsername(username);
 
-    return loadUserUseCase.loadUserByUsername(username);
-  }
+		return loadUserUseCase.loadUserByUsername(username);
+	}
 
-  /** Checks if a given role has the required permission. */
-  private boolean roleHasPermission(UserType role, String permission) {
-    return PermissionConfig.ROLE_PERMISSIONS.getOrDefault(role, Set.of()).contains(permission);
-  }
+	/** Checks if a given role has the required permission. */
+	private boolean roleHasPermission(UserType role, String permission) {
+		return PermissionConfig.ROLE_PERMISSIONS.getOrDefault(role, Set.of()).contains(permission);
+	}
 
-  private String formattedRole(User user) {
-    String roleName = user.getUserType().name();
-    return roleName.substring(0, 1).toUpperCase() + roleName.substring(1).toLowerCase();
-  }
+	private String formattedRole(User user) {
+		String roleName = user.getUserType().name();
+		return roleName.substring(0, 1).toUpperCase() + roleName.substring(1).toLowerCase();
+	}
 }

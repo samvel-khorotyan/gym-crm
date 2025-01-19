@@ -11,49 +11,45 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class TrainerRepository implements UpdateTrainerPort, LoadTrainerPort {
-  private final TrainerPersistenceRepository repository;
+	private final TrainerPersistenceRepository repository;
 
-  @Autowired
-  public TrainerRepository(TrainerPersistenceRepository repository) {
-    this.repository = repository;
-  }
+	@Autowired
+	public TrainerRepository(TrainerPersistenceRepository repository) {
+		this.repository = repository;
+	}
 
-  @Override
-  public Trainer save(Trainer trainer) {
-    return repository.save(trainer);
-  }
+	@Override
+	public Trainer save(Trainer trainer) {
+		return repository.save(trainer);
+	}
 
-  @Override
-  public Trainer findByIdWithTrainees(UUID id) {
-    return repository.findByIdWithTrainees(id).orElseThrow(() -> TrainerNotFoundException.by(id));
-  }
+	@Override
+	public Trainer findByIdWithTrainees(UUID id) {
+		return repository.findByIdWithTrainees(id).orElseThrow(() -> TrainerNotFoundException.by(id));
+	}
 
-  @Override
-  public List<Trainer> findAllByUsernames(List<String> usernames) {
-    return repository.findAllByUsernames(usernames);
-  }
+	@Override
+	public List<Trainer> findAllByUsernames(List<String> usernames) {
+		return repository.findAllByUsernames(usernames);
+	}
 
-  @Override
-  public Trainer findByUsernameWithTrainees(String username) {
-    return repository
-        .findByUsernameWithTrainees(username)
-        .orElseThrow(() -> TrainerNotFoundException.by(username));
-  }
+	@Override
+	public Trainer findByUsernameWithTrainees(String username) {
+		return repository.findByUsernameWithTrainees(username).orElseThrow(() -> TrainerNotFoundException.by(username));
+	}
 
-  @Override
-  public Trainer findByUsername(String username) {
-    return repository
-        .findByUserUsername(username)
-        .orElseThrow(() -> TrainerNotFoundException.by(username));
-  }
+	@Override
+	public Trainer findByUsername(String username) {
+		return repository.findByUserUsername(username).orElseThrow(() -> TrainerNotFoundException.by(username));
+	}
 
-  @Override
-  public List<Trainer> findAll() {
-    return repository.findAll();
-  }
+	@Override
+	public List<Trainer> findAll() {
+		return repository.findAll();
+	}
 
-  @Override
-  public List<Trainer> findActiveTrainersNotAssignedToTrainee(String traineeUsername) {
-    return repository.findActiveTrainersNotAssignedToTrainee(traineeUsername);
-  }
+	@Override
+	public List<Trainer> findActiveTrainersNotAssignedToTrainee(String traineeUsername) {
+		return repository.findActiveTrainersNotAssignedToTrainee(traineeUsername);
+	}
 }

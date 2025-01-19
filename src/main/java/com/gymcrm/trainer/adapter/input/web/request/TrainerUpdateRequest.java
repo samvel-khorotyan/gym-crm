@@ -14,23 +14,23 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TrainerUpdateRequest {
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("first_name")
-  String firstName;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("first_name")
+	String firstName;
 
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("last_name")
-  String lastName;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("last_name")
+	String lastName;
 
-  String specialization;
+	String specialization;
 
-  @JsonProperty("is_active")
-  @NotNull
-  Boolean isActive;
+	@JsonProperty("is_active")
+	@NotNull
+	Boolean isActive;
 
-  public UpdateTrainerCommand toCommand(UUID trainerId) {
-    return new UpdateTrainerCommand(trainerId, firstName, lastName, specialization, isActive);
-  }
+	public UpdateTrainerCommand toCommand(UUID trainerId) {
+		return new UpdateTrainerCommand(trainerId, firstName, lastName, specialization, isActive);
+	}
 }

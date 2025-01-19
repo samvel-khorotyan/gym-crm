@@ -16,10 +16,10 @@ import org.hibernate.annotations.Type;
 @Entity
 @Table(name = "training_type")
 public class TrainingType {
-  @Id
-  @Type(type = "uuid-char")
-  private UUID id;
+	@Id
+	@Type(type = "uuid-char")
+	private UUID id;
 
-  @Column(name = "training_type_name ", nullable = false, unique = true)
-  private String trainingTypeName;
+	@Column(name = "training_type_name ",nullable = false,unique = true)
+	private String trainingTypeName;
 }

@@ -13,21 +13,18 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 @Configuration
 @EnableJpaRepositories(basePackages = "com.gymcrm")
 public class JpaConfig {
-  @Bean
-  public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-    LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
-    emf.setDataSource(dataSource);
-    emf.setPackagesToScan("com.gymcrm");
-    emf.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
-    emf.setJpaPropertyMap(
-        Map.of(
-            "hibernate.show_sql", "true",
-            "hibernate.format_sql", "true"));
-    return emf;
-  }
+	@Bean
+	public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+		LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
+		emf.setDataSource(dataSource);
+		emf.setPackagesToScan("com.gymcrm");
+		emf.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+		emf.setJpaPropertyMap(Map.of("hibernate.show_sql", "true", "hibernate.format_sql", "true"));
+		return emf;
+	}
 
-  @Bean
-  public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
-    return new JpaTransactionManager(entityManagerFactory);
-  }
+	@Bean
+	public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+		return new JpaTransactionManager(entityManagerFactory);
+	}
 }

@@ -5,17 +5,13 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface LoadTrainingPort {
-  List<Training> findAll();
+	List<Training> findAll();
 
-  List<Training> findAllByTrainerUsernames(List<String> usernames);
+	List<Training> findAllByTrainerUsernames(List<String> usernames);
 
-  List<Training> findTraineeTrainingsByCriteria(
-      String username,
-      LocalDate startDate,
-      LocalDate endDate,
-      String trainerName,
-      String trainingType);
+	List<Training> findTraineeTrainingsByCriteria(String username, LocalDate startDate, LocalDate endDate,
+	        String trainerName, String trainingType);
 
-  List<Training> findTrainerTrainingsByCriteria(
-      String username, LocalDate startDate, LocalDate endDate, String traineeName);
+	List<Training> findTrainerTrainingsByCriteria(String username, LocalDate startDate, LocalDate endDate,
+	        String traineeName);
 }

@@ -4,9 +4,9 @@ import com.gymcrm.trainer.domain.Trainer;
 import java.util.List;
 
 public interface LoadTrainerUseCase {
-  Trainer loadByUsername(String username);
+	Trainer loadByUsername(String username);
 
-  List<Trainer> loadAll();
+	List<Trainer> loadAll();
 
-  List<Trainer> loadActiveTrainersNotAssignedToTrainee(String traineeUsername);
+	List<Trainer> loadActiveTrainersNotAssignedToTrainee(String traineeUsername);
 }

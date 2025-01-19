@@ -8,17 +8,16 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class CreateTraineeCommand {
-  String firstName;
-  String lastName;
-  LocalDate dateOfBirth;
-  String address;
-  User user;
+	String firstName;
+	String lastName;
+	LocalDate dateOfBirth;
+	String address;
+	User user;
 
-  public CreateTraineeCommand(
-      String firstName, String lastName, LocalDate dateOfBirth, String address) {
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.dateOfBirth = dateOfBirth;
-    this.address = address;
-  }
+	public CreateTraineeCommand(String firstName, String lastName, LocalDate dateOfBirth, String address) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.dateOfBirth = dateOfBirth;
+		this.address = address;
+	}
 }

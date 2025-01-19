@@ -15,26 +15,26 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TraineeUpdateRequest {
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("first_name")
-  String firstName;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("first_name")
+	String firstName;
 
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("last_name")
-  String lastName;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("last_name")
+	String lastName;
 
-  @JsonProperty("date_of_birth")
-  LocalDate dateOfBirth;
+	@JsonProperty("date_of_birth")
+	LocalDate dateOfBirth;
 
-  String address;
+	String address;
 
-  @JsonProperty("is_active")
-  @NotNull
-  Boolean isActive;
+	@JsonProperty("is_active")
+	@NotNull
+	Boolean isActive;
 
-  public UpdateTraineeCommand toCommand(UUID traineeId) {
-    return new UpdateTraineeCommand(traineeId, firstName, lastName, dateOfBirth, address, isActive);
-  }
+	public UpdateTraineeCommand toCommand(UUID traineeId) {
+		return new UpdateTraineeCommand(traineeId, firstName, lastName, dateOfBirth, address, isActive);
+	}
 }

@@ -12,19 +12,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TrainerCreateRequest {
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("first_name")
-  private String firstName;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("first_name")
+	private String firstName;
 
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("last_name")
-  private String lastName;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("last_name")
+	private String lastName;
 
-  private String specialization;
+	private String specialization;
 
-  public CreateTrainerCommand toCommand() {
-    return new CreateTrainerCommand(firstName, lastName, specialization);
-  }
+	public CreateTrainerCommand toCommand() {
+		return new CreateTrainerCommand(firstName, lastName, specialization);
+	}
 }

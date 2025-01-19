@@ -13,22 +13,19 @@ import org.springframework.hateoas.RepresentationModel;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class TrainerDetailsResponse extends RepresentationModel<TrainerUserDetailsResponse> {
-  private String username;
-  private String firstName;
-  private String lastName;
-  private String specialization;
+	private String username;
+	private String firstName;
+	private String lastName;
+	private String specialization;
 
-  public static TrainerDetailsResponse from(Trainer trainer) {
-    return new TrainerDetailsResponse(
-        trainer.getUser().getUsername(),
-        trainer.getUser().getFirstName(),
-        trainer.getUser().getLastName(),
-        trainer.getSpecialization());
-  }
+	public static TrainerDetailsResponse from(Trainer trainer) {
+		return new TrainerDetailsResponse(trainer.getUser().getUsername(), trainer.getUser().getFirstName(),
+		        trainer.getUser().getLastName(), trainer.getSpecialization());
+	}
 
-  public static List<TrainerDetailsResponse> from(List<Trainer> trainees) {
-    return trainees == null
-        ? Collections.emptyList()
-        : trainees.stream().map(TrainerDetailsResponse::from).collect(Collectors.toList());
-  }
+	public static List<TrainerDetailsResponse> from(List<Trainer> trainees) {
+		return trainees == null
+		        ? Collections.emptyList()
+		        : trainees.stream().map(TrainerDetailsResponse::from).collect(Collectors.toList());
+	}
 }

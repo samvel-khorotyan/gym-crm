@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class UpdateTraineeTrainersCommand {
-  private String traineeUsername;
-  private List<String> trainerUsernames;
+	private String traineeUsername;
+	private List<String> trainerUsernames;
 }

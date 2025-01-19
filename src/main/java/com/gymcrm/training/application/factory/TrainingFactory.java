@@ -7,20 +7,15 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TrainingFactory {
-  private final UUIDGeneratorInterface uuidGenerator;
+	private final UUIDGeneratorInterface uuidGenerator;
 
-  public TrainingFactory(UUIDGeneratorInterface uuidGenerator) {
-    this.uuidGenerator = uuidGenerator;
-  }
+	public TrainingFactory(UUIDGeneratorInterface uuidGenerator) {
+		this.uuidGenerator = uuidGenerator;
+	}
 
-  public Training createFrom(CreateTrainingCommand command) {
-    return new Training(
-        uuidGenerator.newUUID(),
-        command.getTrainingName(),
-        command.getTrainee(),
-        command.getTrainer(),
-        command.getTrainingType(),
-        command.getTrainingDate(),
-        command.getTrainingDuration());
-  }
+	public Training createFrom(CreateTrainingCommand command) {
+		return new Training(uuidGenerator.newUUID(), command.getTrainingName(), command.getTrainee(),
+		        command.getTrainer(), command.getTrainingType(), command.getTrainingDate(),
+		        command.getTrainingDuration());
+	}
 }

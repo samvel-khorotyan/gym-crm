@@ -4,7 +4,7 @@ import com.gymcrm.trainee.domain.Trainee;
 import java.util.List;
 
 public interface LoadTraineeUseCase {
-  Trainee loadByUsername(String username);
+	Trainee loadByUsername(String username);
 
-  List<Trainee> loadAll();
+	List<Trainee> loadAll();
 }

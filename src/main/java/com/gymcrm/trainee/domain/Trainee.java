@@ -20,37 +20,30 @@ import org.hibernate.annotations.Type;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Trainee {
-  @Id
-  @Type(type = "uuid-char")
-  private UUID id;
+	@Id
+	@Type(type = "uuid-char")
+	private UUID id;
 
-  @Column(name = "date_of_birth ")
-  private LocalDate dateOfBirth;
+	@Column(name = "date_of_birth ")
+	private LocalDate dateOfBirth;
 
-  private String address;
+	private String address;
 
-  @OneToOne
-  @JoinColumn(name = "user_id")
-  private User user;
+	@OneToOne
+	@JoinColumn(name = "user_id")
+	private User user;
 
-  @OneToMany(
-      mappedBy = "trainee",
-      cascade = CascadeType.ALL,
-      orphanRemoval = true,
-      fetch = FetchType.EAGER)
-  private List<Training> trainings;
+	@OneToMany(mappedBy = "trainee",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.EAGER)
+	private List<Training> trainings;
 
-  @ManyToMany
-  @JoinTable(
-      name = "trainee_trainer",
-      joinColumns = @JoinColumn(name = "trainee_id"),
-      inverseJoinColumns = @JoinColumn(name = "trainer_id"))
-  private List<Trainer> trainers;
+	@ManyToMany
+	@JoinTable(name = "trainee_trainer",joinColumns = @JoinColumn(name = "trainee_id"),inverseJoinColumns = @JoinColumn(name = "trainer_id"))
+	private List<Trainer> trainers;
 
-  public Trainee(UUID id, LocalDate dateOfBirth, String address, User user) {
-    this.id = id;
-    this.dateOfBirth = dateOfBirth;
-    this.address = address;
-    this.user = user;
-  }
+	public Trainee(UUID id, LocalDate dateOfBirth, String address, User user) {
+		this.id = id;
+		this.dateOfBirth = dateOfBirth;
+		this.address = address;
+		this.user = user;
+	}
 }

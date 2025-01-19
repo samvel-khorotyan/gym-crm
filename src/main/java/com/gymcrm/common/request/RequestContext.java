@@ -8,5 +8,5 @@ import org.springframework.web.context.annotation.RequestScope;
 @RequestScope
 @Component
 public class RequestContext {
-  private String username;
+	private String username;
 }

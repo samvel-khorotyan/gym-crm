@@ -7,5 +7,5 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface UserUpdateMapper {
-  void updateUserFromCommand(UpdateUserCommand command, @MappingTarget User trainee);
+	void updateUserFromCommand(UpdateUserCommand command, @MappingTarget User trainee);
 }

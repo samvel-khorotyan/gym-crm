@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class ActivateDeactivateTraineeCommand {
-  private String username;
-  private Boolean isActive;
+	private String username;
+	private Boolean isActive;
 }

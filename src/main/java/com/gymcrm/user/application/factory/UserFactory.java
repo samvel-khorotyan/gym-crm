@@ -7,20 +7,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class UserFactory {
-  private final UUIDGeneratorInterface uuidGenerator;
+	private final UUIDGeneratorInterface uuidGenerator;
 
-  public UserFactory(UUIDGeneratorInterface uuidGenerator) {
-    this.uuidGenerator = uuidGenerator;
-  }
+	public UserFactory(UUIDGeneratorInterface uuidGenerator) {
+		this.uuidGenerator = uuidGenerator;
+	}
 
-  public User createFrom(CreateUserCommand command) {
-    return new User(
-        uuidGenerator.newUUID(),
-        command.getFirstName(),
-        command.getLastName(),
-        command.getUsername(),
-        command.getPassword(),
-        true,
-        command.getUserType());
-  }
+	public User createFrom(CreateUserCommand command) {
+		return new User(uuidGenerator.newUUID(), command.getFirstName(), command.getLastName(), command.getUsername(),
+		        command.getPassword(), true, command.getUserType());
+	}
 }

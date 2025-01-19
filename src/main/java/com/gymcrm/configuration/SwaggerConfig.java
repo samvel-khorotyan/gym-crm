@@ -13,21 +13,14 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @EnableSwagger2
 public class SwaggerConfig {
-  @Bean
-  public Docket api() {
-    return new Docket(DocumentationType.SWAGGER_2)
-        .select()
-        .apis(RequestHandlerSelectors.basePackage("com.gymcrm"))
-        .paths(PathSelectors.any())
-        .build()
-        .apiInfo(apiInfo());
-  }
+	@Bean
+	public Docket api() {
+		return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.basePackage("com.gymcrm"))
+		        .paths(PathSelectors.any()).build().apiInfo(apiInfo());
+	}
 
-  private ApiInfo apiInfo() {
-    return new ApiInfoBuilder()
-        .title("Gym CRM API")
-        .description("API Documentation for Gym CRM Application")
-        .version("1.0")
-        .build();
-  }
+	private ApiInfo apiInfo() {
+		return new ApiInfoBuilder().title("Gym CRM API").description("API Documentation for Gym CRM Application")
+		        .version("1.0").build();
+	}
 }

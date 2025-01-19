@@ -13,22 +13,22 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TraineeCreateRequest {
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("first_name")
-  private String firstName;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("first_name")
+	private String firstName;
 
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("last_name")
-  private String lastName;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("last_name")
+	private String lastName;
 
-  @JsonProperty("date_of_birth")
-  private LocalDate dateOfBirth;
+	@JsonProperty("date_of_birth")
+	private LocalDate dateOfBirth;
 
-  private String address;
+	private String address;
 
-  public CreateTraineeCommand toCommand() {
-    return new CreateTraineeCommand(firstName, lastName, dateOfBirth, address);
-  }
+	public CreateTraineeCommand toCommand() {
+		return new CreateTraineeCommand(firstName, lastName, dateOfBirth, address);
+	}
 }

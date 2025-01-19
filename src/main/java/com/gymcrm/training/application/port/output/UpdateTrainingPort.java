@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface UpdateTrainingPort {
-  void save(Training training);
+	void save(Training training);
 
-  void saveAll(List<Training> trainings);
+	void saveAll(List<Training> trainings);
 
-  void deleteByTraineeId(UUID traineeId);
+	void deleteByTraineeId(UUID traineeId);
 }

@@ -10,15 +10,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface TrainingPersistenceRepository
-    extends JpaRepository<Training, UUID>, JpaSpecificationExecutor<Training> {
-  boolean existsByTraineeUserUsername(String username);
+        extends
+            JpaRepository<Training, UUID>,
+            JpaSpecificationExecutor<Training> {
+	boolean existsByTraineeUserUsername(String username);
 
-  boolean existsByTrainerUserUsername(String username);
+	boolean existsByTrainerUserUsername(String username);
 
-  @Modifying
-  @Query("DELETE FROM Training t WHERE t.trainee.id = :traineeId")
-  void deleteAllByTraineeId(UUID traineeId);
+	@Modifying
+	@Query("DELETE FROM Training t WHERE t.trainee.id = :traineeId")
+	void deleteAllByTraineeId(UUID traineeId);
 
-  @Query("SELECT t FROM Training t WHERE t.trainer.user.username IN :usernames")
-  List<Training> findAllByTrainerUsernames(@Param("usernames") List<String> usernames);
+	@Query("SELECT t FROM Training t WHERE t.trainer.user.username IN :usernames")
+	List<Training> findAllByTrainerUsernames(@Param("usernames") List<String> usernames);
 }

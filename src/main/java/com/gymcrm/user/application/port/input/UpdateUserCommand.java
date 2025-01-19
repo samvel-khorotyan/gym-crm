@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateUserCommand {
-  String firstName;
-  String lastName;
-  Boolean isActive;
+	String firstName;
+	String lastName;
+	Boolean isActive;
 }

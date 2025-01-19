@@ -13,15 +13,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TraineeActivateDeactivateRequest {
-  @NotBlank
-  @Size(min = 1, max = 200)
-  private String username;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	private String username;
 
-  @NotNull
-  @JsonProperty("is_active")
-  private Boolean isActive;
+	@NotNull
+	@JsonProperty("is_active")
+	private Boolean isActive;
 
-  public ActivateDeactivateTraineeCommand toCommand() {
-    return new ActivateDeactivateTraineeCommand(username, isActive);
-  }
+	public ActivateDeactivateTraineeCommand toCommand() {
+		return new ActivateDeactivateTraineeCommand(username, isActive);
+	}
 }

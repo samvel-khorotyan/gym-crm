@@ -12,21 +12,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LoginUpdateRequest {
-  @NotBlank
-  @Size(min = 1, max = 200)
-  private String username;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	private String username;
 
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("old_password")
-  private String oldPassword;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("old_password")
+	private String oldPassword;
 
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("new_password")
-  private String newPassword;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("new_password")
+	private String newPassword;
 
-  public UpdatePasswordCommand toCommand() {
-    return new UpdatePasswordCommand(username, oldPassword, newPassword);
-  }
+	public UpdatePasswordCommand toCommand() {
+		return new UpdatePasswordCommand(username, oldPassword, newPassword);
+	}
 }

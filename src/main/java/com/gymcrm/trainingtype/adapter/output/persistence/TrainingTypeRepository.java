@@ -10,27 +10,26 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class TrainingTypeRepository implements UpdateTrainingTypePort, LoadTrainingTypePort {
-  private final TrainingTypePersistenceRepository repository;
+	private final TrainingTypePersistenceRepository repository;
 
-  @Autowired
-  public TrainingTypeRepository(TrainingTypePersistenceRepository repository) {
-    this.repository = repository;
-  }
+	@Autowired
+	public TrainingTypeRepository(TrainingTypePersistenceRepository repository) {
+		this.repository = repository;
+	}
 
-  @Override
-  public TrainingType save(TrainingType trainingType) {
-    return repository.save(trainingType);
-  }
+	@Override
+	public TrainingType save(TrainingType trainingType) {
+		return repository.save(trainingType);
+	}
 
-  @Override
-  public List<TrainingType> findAll() {
-    return repository.findAll();
-  }
+	@Override
+	public List<TrainingType> findAll() {
+		return repository.findAll();
+	}
 
-  @Override
-  public TrainingType findByTrainingTypeName(String trainingTypeName) {
-    return repository
-        .findByTrainingTypeName(trainingTypeName)
-        .orElseThrow(() -> TrainingTypeNotFoundException.by(trainingTypeName));
-  }
+	@Override
+	public TrainingType findByTrainingTypeName(String trainingTypeName) {
+		return repository.findByTrainingTypeName(trainingTypeName)
+		        .orElseThrow(() -> TrainingTypeNotFoundException.by(trainingTypeName));
+	}
 }

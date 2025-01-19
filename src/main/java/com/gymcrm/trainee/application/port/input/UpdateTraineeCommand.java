@@ -9,26 +9,21 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateTraineeCommand {
-  UUID traineeId;
-  String firstName;
-  String lastName;
-  LocalDate dateOfBirth;
-  String address;
-  Training training;
-  Boolean isActive;
+	UUID traineeId;
+	String firstName;
+	String lastName;
+	LocalDate dateOfBirth;
+	String address;
+	Training training;
+	Boolean isActive;
 
-  public UpdateTraineeCommand(
-      UUID traineeId,
-      String firstName,
-      String lastName,
-      LocalDate dateOfBirth,
-      String address,
-      Boolean isActive) {
-    this.traineeId = traineeId;
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.dateOfBirth = dateOfBirth;
-    this.address = address;
-    this.isActive = isActive;
-  }
+	public UpdateTraineeCommand(UUID traineeId, String firstName, String lastName, LocalDate dateOfBirth,
+	        String address, Boolean isActive) {
+		this.traineeId = traineeId;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.dateOfBirth = dateOfBirth;
+		this.address = address;
+		this.isActive = isActive;
+	}
 }

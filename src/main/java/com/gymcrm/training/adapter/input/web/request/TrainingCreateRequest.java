@@ -14,31 +14,31 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TrainingCreateRequest {
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("trainee_username")
-  String traineeUsername;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("trainee_username")
+	String traineeUsername;
 
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("trainer_username")
-  String trainerUsername;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("trainer_username")
+	String trainerUsername;
 
-  @NotBlank
-  @Size(min = 1, max = 200)
-  @JsonProperty("training_name")
-  String trainingName;
+	@NotBlank
+	@Size(min = 1,max = 200)
+	@JsonProperty("training_name")
+	String trainingName;
 
-  @NotNull
-  @JsonProperty("training_date")
-  LocalDate trainingDate;
+	@NotNull
+	@JsonProperty("training_date")
+	LocalDate trainingDate;
 
-  @NotNull
-  @JsonProperty("training_duration")
-  Integer trainingDuration;
+	@NotNull
+	@JsonProperty("training_duration")
+	Integer trainingDuration;
 
-  public CreateTrainingCommand toCommand() {
-    return new CreateTrainingCommand(
-        traineeUsername, trainerUsername, trainingName, trainingDate, trainingDuration);
-  }
+	public CreateTrainingCommand toCommand() {
+		return new CreateTrainingCommand(traineeUsername, trainerUsername, trainingName, trainingDate,
+		        trainingDuration);
+	}
 }

@@ -91,6 +91,17 @@
             <artifactId>javax.persistence-api</artifactId>
             <version>2.2</version>
         </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>2.0.1.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.el</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
 
         <!-- Embedded Tomcat -->
         <dependency>
@@ -208,7 +219,19 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.3</version>
+            <version>5.11.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.6.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.6.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -261,8 +284,17 @@
                         <googleJavaFormat>
                             <style>GOOGLE</style>
                         </googleJavaFormat>
+                        <eclipse>
+                            <file>src/main/resources/eclipse-java-formatter.xml</file>
+                        </eclipse>
+                        <removeUnusedImports/>
                     </java>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.4.0</version>
             </plugin>
             <plugin>
                 <groupId>org.flywaydb</groupId>
