@@ -52,23 +52,15 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUp
 		}
 	}
 
-	private String generateUsername(String firstName, String lastName) {
-		try {
-			String baseUsername = UserUtil.getBaseUsername(firstName, lastName);
-			var usernames = loadUserPort.findDistinctUsernamesStartingWith(baseUsername);
-			return UserUtil.generateUniqueUsername(new HashSet<>(usernames), baseUsername);
-		} catch (Exception e) {
-			logger.error("Error generating username for: {} {}, Reason: {}", firstName, lastName, e.getMessage(), e);
-			throw new RuntimeException("Failed to generate username", e);
-		}
-	}
-
 	@Override
 	public User loadUserByUsername(String username) {
 		try {
 			return loadUserPort.findByUsername(username);
-		} catch (Exception e) {
+		} catch (UserNotFoundException e) {
 			logger.error("Error fetching user by username: {}, Reason: {}", username, e.getMessage(), e);
+			throw e;
+		} catch (Exception e) {
+			logger.error("Unexpected error fetching user by username: {}, Reason: {}", username, e.getMessage(), e);
 			throw new RuntimeException("Failed to fetch user by username", e);
 		}
 	}
@@ -107,6 +99,17 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUp
 			logger.error("Transaction ID: {} - Unexpected error while updating password for user: {}, Reason: {}",
 			        transactionId, command.getUsername(), e.getMessage(), e);
 			throw new RuntimeException("Unexpected error occurred. Please contact support.", e);
+		}
+	}
+
+	private String generateUsername(String firstName, String lastName) {
+		try {
+			String baseUsername = UserUtil.getBaseUsername(firstName, lastName);
+			var usernames = loadUserPort.findDistinctUsernamesStartingWith(baseUsername);
+			return UserUtil.generateUniqueUsername(new HashSet<>(usernames), baseUsername);
+		} catch (Exception e) {
+			logger.error("Error generating username for: {} {}, Reason: {}", firstName, lastName, e.getMessage(), e);
+			throw new RuntimeException("Failed to generate username", e);
 		}
 	}
 }

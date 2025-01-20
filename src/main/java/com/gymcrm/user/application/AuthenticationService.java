@@ -32,8 +32,10 @@ public class AuthenticationService implements AuthenticationUseCase {
 				return;
 			}
 
-			logger.warn("Transaction ID: {} - Unauthorized access attempt for username: {}", transactionId, username);
 			throw new UnauthorizedException("Authentication failed. Please verify your credentials.");
+		} catch (UnauthorizedException e) {
+			logger.warn("Transaction ID: {} - Unauthorized access attempt for username: {}", transactionId, username);
+			throw e;
 		} catch (Exception e) {
 			logger.error("Transaction ID: {} - Error during authentication for username: {}, Reason: {}", transactionId,
 			        username, e.getMessage(), e);

@@ -186,6 +186,9 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 		try {
 			updateTraineePort.deleteByUsername(username);
 			logger.info("Transaction ID: {} - Successfully deleted trainee with username: {}", transactionId, username);
+		} catch (TraineeNotFoundException e) {
+			logger.warn("Transaction ID: {} - Trainee not found with username: {}", transactionId, username);
+			throw e;
 		} catch (Exception e) {
 			logger.error("Transaction ID: {} - Failed to delete trainee with username: {}, Reason: {}", transactionId,
 			        username, e.getMessage(), e);
