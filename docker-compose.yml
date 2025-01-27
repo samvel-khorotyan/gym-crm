@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  gym_crm_dev_db:
+    image: mysql:8.0
+    container_name: gym_crm_dev_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: gym_crm_dev
+    ports:
+      - "3307:3306" # Dev MySQL (mapped to port 3307)
+
+  gym_crm_stg_db:
+    image: mysql:8.0
+    container_name: gym_crm_stg_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: gym_crm_stg
+    ports:
+      - "3308:3306" # Staging MySQL (mapped to port 3308)
+
+  gym_crm_prod_db:
+    image: mysql:8.0
+    container_name: gym_crm_prod_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: gym_crm_prod
+    ports:
+      - "3309:3306" # Production MySQL (mapped to port 3309)
+
+  flyway:
+    image: flyway/flyway:8.0.4
+    depends_on:
+      - gym_crm_dev_db
+    environment:
+      FLYWAY_URL: jdbc:mysql://gym_crm_dev_mysql:3306/gym_crm_dev
+      FLYWAY_USER: root
+      FLYWAY_PASSWORD: example
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+    volumes:
+      - ./db/migration/dev:/flyway/sql
+    command: -connectRetries=10 migrate
+
+networks:
+  default:
+    name: springboot_network
+    driver: bridge
