@@ -19,7 +19,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +34,6 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 	private final UpdateTraineePort updateTraineePort;
 	private final LoadTrainingTypePort loadTrainingTypePort;
 
-	@Autowired
 	public TrainingService(UpdateTrainingPort updateTrainingPort, LoadTrainingPort loadTrainingPort,
 	        TrainingFactory trainingFactory, LoadTraineePort loadTraineePort, LoadTrainerPort loadTrainerPort,
 	        UpdateTraineePort updateTraineePort, LoadTrainingTypePort loadTrainingTypePort) {

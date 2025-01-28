@@ -16,6 +16,14 @@ public class DataSourceConfig {
 	}
 
 	@Bean
+	@Profile("local")
+	public DataSource localDataSource() {
+		return DataSourceBuilder.create().url(applicationProperties.getJdbcUrl())
+		        .username(applicationProperties.getUsername()).password(applicationProperties.getPassword())
+		        .driverClassName(applicationProperties.getDriverClassName()).build();
+	}
+
+	@Bean
 	@Profile("dev")
 	public DataSource devDataSource() {
 		return DataSourceBuilder.create().url(applicationProperties.getJdbcUrl())

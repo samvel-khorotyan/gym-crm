@@ -13,7 +13,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,7 +24,6 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUp
 	private final LoadUserPort loadUserPort;
 	private final AuthenticationUseCase authenticationUseCase;
 
-	@Autowired
 	public UserService(UserFactory userFactory, UpdateUserPort updateUserPort, LoadUserPort loadUserPort,
 	        AuthenticationUseCase authenticationUseCase) {
 		this.userFactory = userFactory;

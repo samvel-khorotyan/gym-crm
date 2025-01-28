@@ -6,14 +6,12 @@ import com.gymcrm.trainee.application.port.output.UpdateTraineePort;
 import com.gymcrm.trainee.domain.Trainee;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class TraineeRepository implements UpdateTraineePort, LoadTraineePort {
 	private final TraineePersistenceRepository repository;
 
-	@Autowired
 	public TraineeRepository(TraineePersistenceRepository repository) {
 		this.repository = repository;
 	}

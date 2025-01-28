@@ -47,7 +47,6 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 	private final LoadTrainingPort loadTrainingPort;
 	private final TrainingFactory trainingFactory;
 
-	@Autowired
 	public TraineeService(UpdateTraineePort updateTraineePort, UpdateUserPort updateUserPort,
 	        LoadTrainerPort loadTrainerPort, UpdateTrainingPort updateTrainingPort,
 	        UserCreationUseCase userCreationUseCase, TraineeFactory traineeFactory,

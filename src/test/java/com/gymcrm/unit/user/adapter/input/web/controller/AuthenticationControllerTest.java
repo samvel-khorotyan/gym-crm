@@ -78,6 +78,48 @@ class AuthenticationControllerTest {
 	}
 
 	@Test
+	public void updateLoginDetails_ShouldReturnBadRequest_WhenOldPasswordIsEmpty() throws Exception {
+		Map<String, Object> traineeRequest = loginUpdateRequest();
+		traineeRequest.put("old_password", "");
+
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		        .content(objectMapper.writeValueAsString(traineeRequest)))
+		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+	}
+
+	@Test
+	public void updateLoginDetails_ShouldReturnBadRequest_WhenOldPasswordExceedsMaxLength() throws Exception {
+		Map<String, Object> traineeRequest = loginUpdateRequest();
+		traineeRequest.put("old_password",
+		        "This is a sample test description that serves as input data for verifying the functionality of the trainee creation endpoint. It includes details to check proper response handling for valid requests in a realistic scenario.");
+
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		        .content(objectMapper.writeValueAsString(traineeRequest)))
+		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+	}
+
+	@Test
+	public void updateLoginDetails_ShouldReturnBadRequest_WhenNewPasswordIsEmpty() throws Exception {
+		Map<String, Object> traineeRequest = loginUpdateRequest();
+		traineeRequest.put("new_password", "");
+
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		        .content(objectMapper.writeValueAsString(traineeRequest)))
+		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+	}
+
+	@Test
+	public void updateLoginDetails_ShouldReturnBadRequest_WhenNewPasswordExceedsMaxLength() throws Exception {
+		Map<String, Object> traineeRequest = loginUpdateRequest();
+		traineeRequest.put("new_password",
+		        "This is a sample test description that serves as input data for verifying the functionality of the trainee creation endpoint. It includes details to check proper response handling for valid requests in a realistic scenario.");
+
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		        .content(objectMapper.writeValueAsString(traineeRequest)))
+		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+	}
+
+	@Test
 	public void updatePassword_ShouldReturnOk_WhenRequestIsValid() throws Exception {
 		doNothing().when(userUpdateUseCase).updatePassword(getUpdatePasswordCommand());
 

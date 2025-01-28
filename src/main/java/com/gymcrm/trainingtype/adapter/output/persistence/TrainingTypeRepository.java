@@ -5,14 +5,12 @@ import com.gymcrm.trainingtype.application.port.output.LoadTrainingTypePort;
 import com.gymcrm.trainingtype.application.port.output.UpdateTrainingTypePort;
 import com.gymcrm.trainingtype.domain.TrainingType;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class TrainingTypeRepository implements UpdateTrainingTypePort, LoadTrainingTypePort {
 	private final TrainingTypePersistenceRepository repository;
 
-	@Autowired
 	public TrainingTypeRepository(TrainingTypePersistenceRepository repository) {
 		this.repository = repository;
 	}

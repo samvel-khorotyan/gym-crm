@@ -6,7 +6,6 @@ import com.gymcrm.user.application.port.output.AuthenticationPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,7 +14,6 @@ public class AuthenticationService implements AuthenticationUseCase {
 
 	private final AuthenticationPort authenticationPort;
 
-	@Autowired
 	public AuthenticationService(AuthenticationPort AuthenticationPort) {
 		this.authenticationPort = AuthenticationPort;
 	}

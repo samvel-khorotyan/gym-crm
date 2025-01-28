@@ -34,7 +34,6 @@ public class TrainerService implements TrainerCreationUseCase, TrainerUpdateUseC
 	private final UserUpdateMapper userUpdateMapper;
 	private final TrainerUpdateMapper trainerUpdateMapper;
 
-	@Autowired
 	public TrainerService(UpdateTrainerPort updateTrainerPort, TrainerFactory trainerFactory,
 	        UserCreationUseCase userCreationUseCase, UpdateUserPort updateUserPort, UserUpdateMapper userUpdateMapper,
 	        TrainerUpdateMapper trainerUpdateMapper) {
