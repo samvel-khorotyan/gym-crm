@@ -4,7 +4,7 @@ import com.gymcrm.user.domain.User;
 import java.util.List;
 
 public interface LoadUserUseCase {
-  User loadUserByUsername(String username);
+	User loadUserByUsername(String username);
 
-  List<User> loadAll();
+	List<User> loadAll();
 }

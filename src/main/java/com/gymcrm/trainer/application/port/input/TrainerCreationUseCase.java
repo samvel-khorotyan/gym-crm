@@ -1,5 +1,7 @@
 package com.gymcrm.trainer.application.port.input;
 
+import com.gymcrm.trainer.domain.Trainer;
+
 public interface TrainerCreationUseCase {
-  void create(CreateTrainerCommand command);
+	Trainer create(CreateTrainerCommand command);
 }

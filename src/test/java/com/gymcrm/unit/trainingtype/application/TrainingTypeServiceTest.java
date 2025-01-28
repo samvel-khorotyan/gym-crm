@@ -4,87 +4,59 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.gymcrm.trainingtype.application.TrainingTypeService;
-import com.gymcrm.trainingtype.application.exception.TrainingTypeNotFoundException;
-import com.gymcrm.trainingtype.application.factory.TrainingTypeFactory;
-import com.gymcrm.trainingtype.application.port.input.CreateTrainingTypeCommand;
 import com.gymcrm.trainingtype.application.port.output.LoadTrainingTypePort;
-import com.gymcrm.trainingtype.application.port.output.UpdateTrainingTypePort;
 import com.gymcrm.trainingtype.domain.TrainingType;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingTypeServiceTest {
-  @Mock private TrainingTypeFactory trainingTypeFactory;
+	@Mock
+	private LoadTrainingTypePort loadTrainingTypePort;
 
-  @Mock private UpdateTrainingTypePort updateTrainingTypePort;
+	@InjectMocks
+	private TrainingTypeService trainingTypeService;
 
-  @Mock private LoadTrainingTypePort loadTrainingTypePort;
+	@Test
+	void loadAll_ShouldReturnAllTrainingTypes() {
+		List<TrainingType> trainingTypes = List.of(new TrainingType(), new TrainingType());
+		when(loadTrainingTypePort.findAll()).thenReturn(trainingTypes);
 
-  @InjectMocks private TrainingTypeService trainingTypeService;
+		List<TrainingType> result = trainingTypeService.loadAll();
 
-  private CreateTrainingTypeCommand validCommand;
+		assertEquals(trainingTypes.size(), result.size());
+		verify(loadTrainingTypePort, times(1)).findAll();
+	}
 
-  @BeforeEach
-  void setUp() {
-    validCommand = new CreateTrainingTypeCommand("Wrestling");
-  }
+	@Test
+	void loadAll_ShouldLogTransactionIdAndReturnResults() {
+		MDC.put("transactionId", "12345");
+		List<TrainingType> trainingTypes = List.of(new TrainingType());
+		when(loadTrainingTypePort.findAll()).thenReturn(trainingTypes);
 
-  @Test
-  void create_ShouldThrowIllegalArgumentException_WhenTrainingTypeNameIsNull() {
-    validCommand.setTrainingTypeName(null);
+		List<TrainingType> result = trainingTypeService.loadAll();
 
-    IllegalArgumentException exception =
-        assertThrows(
-            IllegalArgumentException.class, () -> trainingTypeService.create(validCommand));
+		assertEquals(1, result.size());
+		assertEquals(trainingTypes, result);
+		verify(loadTrainingTypePort, times(1)).findAll();
 
-    assertEquals("Training type name cannot be null or empty", exception.getMessage());
-  }
+		MDC.clear();
+	}
 
-  @Test
-  void create_ShouldThrowIllegalArgumentException_WhenTrainingTypeNameIsBlank() {
-    validCommand.setTrainingTypeName("   ");
+	@Test
+	void loadAll_ShouldThrowException_WhenLoadTrainingTypePortFails() {
+		MDC.put("transactionId", "12345");
+		when(loadTrainingTypePort.findAll()).thenThrow(new RuntimeException("Database error"));
 
-    IllegalArgumentException exception =
-        assertThrows(
-            IllegalArgumentException.class, () -> trainingTypeService.create(validCommand));
+		RuntimeException exception = assertThrows(RuntimeException.class, trainingTypeService::loadAll);
+		assertEquals("Failed to fetch training types.", exception.getMessage());
+		verify(loadTrainingTypePort, times(1)).findAll();
 
-    assertEquals("Training type name cannot be null or empty", exception.getMessage());
-  }
-
-  @Test
-  void create_ShouldReturnExistingTrainingType_WhenFoundByLoadPort() {
-    TrainingType existingTrainingType = new TrainingType();
-    when(loadTrainingTypePort.findByTrainingTypeName("Wrestling")).thenReturn(existingTrainingType);
-
-    // Act
-    TrainingType result = trainingTypeService.create(validCommand);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(existingTrainingType, result);
-    verify(loadTrainingTypePort, times(1)).findByTrainingTypeName("Wrestling");
-    verifyNoInteractions(trainingTypeFactory, updateTrainingTypePort);
-  }
-
-  @Test
-  void create_ShouldSaveNewTrainingType_WhenNotFound() {
-    TrainingType newTrainingType = new TrainingType();
-    when(loadTrainingTypePort.findByTrainingTypeName("Wrestling"))
-        .thenThrow(TrainingTypeNotFoundException.by("Wrestling"));
-    when(trainingTypeFactory.createFrom(validCommand)).thenReturn(newTrainingType);
-    when(updateTrainingTypePort.save(newTrainingType)).thenReturn(newTrainingType);
-
-    TrainingType result = trainingTypeService.create(validCommand);
-
-    assertNotNull(result);
-    assertEquals(newTrainingType, result);
-    verify(loadTrainingTypePort, times(1)).findByTrainingTypeName("Wrestling");
-    verify(trainingTypeFactory, times(1)).createFrom(validCommand);
-    verify(updateTrainingTypePort, times(1)).save(newTrainingType);
-  }
+		MDC.clear();
+	}
 }

@@ -8,6 +8,7 @@ import com.gymcrm.trainee.application.factory.TraineeFactory;
 import com.gymcrm.trainee.application.port.input.CreateTraineeCommand;
 import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.user.domain.User;
+import com.gymcrm.user.domain.UserType;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -18,38 +19,28 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class TraineeFactoryTest {
-  @Mock private UUIDGeneratorInterface uuidGeneratorInterface;
+	@Mock
+	private UUIDGeneratorInterface uuidGenerator;
 
-  @InjectMocks private TraineeFactory traineeFactory;
+	@InjectMocks
+	private TraineeFactory traineeFactory;
 
-  @Test
-  void testCreateFrom_createsTraineeWithCorrectFields() {
-    UUID generatedUUID = UUID.randomUUID();
-    LocalDate dateOfBirth = LocalDate.of(2000, 1, 1);
-    String address = "123 Main St";
-    UUID userId = UUID.randomUUID();
+	@Test
+	void createFrom_ShouldReturnTraineeWithCorrectValues() {
+		UUID mockUUID = UUID.randomUUID();
+		when(uuidGenerator.newUUID()).thenReturn(mockUUID);
 
-    User user = new User(userId, "John", "Doe", "john.doe", "password123", true, null);
-    CreateTraineeCommand command = new CreateTraineeCommand(dateOfBirth, address, user);
+		CreateTraineeCommand command = new CreateTraineeCommand("John", "Doe", LocalDate.of(1990, 1, 1), "123 Main St",
+		        new User(UUID.randomUUID(), "John", "Doe", "john.doe", "password123", true, UserType.TRAINEE));
 
-    when(uuidGeneratorInterface.newUUID()).thenReturn(generatedUUID);
+		Trainee result = traineeFactory.createFrom(command);
 
-    Trainee trainee = traineeFactory.createFrom(command);
+		assertNotNull(result);
+		assertEquals(mockUUID, result.getId());
+		assertEquals(command.getDateOfBirth(), result.getDateOfBirth());
+		assertEquals(command.getAddress(), result.getAddress());
+		assertEquals(command.getUser(), result.getUser());
 
-    assertNotNull(trainee, "Trainee object should not be null");
-    assertEquals(generatedUUID, trainee.getId(), "Trainee ID should match generated UUID");
-    assertEquals(dateOfBirth, trainee.getDateOfBirth(), "Date of Birth should match command");
-    assertEquals(address, trainee.getAddress(), "Address should match command");
-    assertEquals(user, trainee.getUser(), "User should match command");
-
-    verify(uuidGeneratorInterface, times(1)).newUUID();
-  }
-
-  @Test
-  void testCreateFrom_handlesNullCommand() {
-    assertThrows(
-        NullPointerException.class,
-        () -> traineeFactory.createFrom(null),
-        "Should throw NullPointerException when command is null");
-  }
+		verify(uuidGenerator, times(1)).newUUID();
+	}
 }

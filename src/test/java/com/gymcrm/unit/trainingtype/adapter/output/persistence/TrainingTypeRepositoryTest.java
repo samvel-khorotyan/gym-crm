@@ -7,9 +7,8 @@ import com.gymcrm.trainingtype.adapter.output.persistence.TrainingTypePersistenc
 import com.gymcrm.trainingtype.adapter.output.persistence.TrainingTypeRepository;
 import com.gymcrm.trainingtype.application.exception.TrainingTypeNotFoundException;
 import com.gymcrm.trainingtype.domain.TrainingType;
+import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,72 +17,53 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingTypeRepositoryTest {
-  @Mock private TrainingTypePersistenceRepository repository;
+	@Mock
+	private TrainingTypePersistenceRepository repository; // Մոդելացված (Mock) Repository
 
-  @InjectMocks private TrainingTypeRepository trainingTypeRepository;
+	@InjectMocks
+	private TrainingTypeRepository trainingTypeRepository; // Թեստավորվող իրական Repository
 
-  private TrainingType trainingType;
-  private UUID trainingTypeId;
+	@Test
+	void save_ShouldSaveTrainingType_WhenValidTrainingTypeProvided() {
+		TrainingType trainingType = new TrainingType(); // Կեղծ TrainingType օբյեկտ
+		when(repository.save(trainingType)).thenReturn(trainingType);
 
-  @BeforeEach
-  void setUp() {
-    trainingTypeId = UUID.randomUUID();
-    trainingType = new TrainingType(trainingTypeId, "Wrestling");
-  }
+		TrainingType savedTrainingType = trainingTypeRepository.save(trainingType);
 
-  @Test
-  void save_ShouldSaveTrainingType() {
-    when(repository.save(trainingType)).thenReturn(trainingType);
+		assertEquals(trainingType, savedTrainingType);
+		verify(repository, times(1)).save(trainingType);
+	}
 
-    TrainingType savedTrainingType = trainingTypeRepository.save(trainingType);
+	@Test
+	void findAll_ShouldReturnAllTrainingTypes() {
+		List<TrainingType> trainingTypes = List.of(new TrainingType(), new TrainingType());
+		when(repository.findAll()).thenReturn(trainingTypes);
 
-    assertNotNull(savedTrainingType);
-    assertEquals(trainingType, savedTrainingType);
-    verify(repository, times(1)).save(trainingType);
-  }
+		List<TrainingType> result = trainingTypeRepository.findAll();
 
-  @Test
-  void findById_ShouldReturnTrainingType_WhenTrainingTypeExists() {
-    when(repository.findById(trainingTypeId)).thenReturn(Optional.of(trainingType));
+		assertEquals(trainingTypes, result);
+		verify(repository, times(1)).findAll();
+	}
 
-    TrainingType foundTrainingType = trainingTypeRepository.findById(trainingTypeId);
+	@Test
+	void findByTrainingTypeName_ShouldReturnTrainingType_WhenTrainingTypeNameExists() {
+		String trainingTypeName = "Yoga";
+		TrainingType trainingType = new TrainingType();
+		when(repository.findByTrainingTypeName(trainingTypeName)).thenReturn(Optional.of(trainingType));
 
-    assertNotNull(foundTrainingType);
-    assertEquals(trainingType, foundTrainingType);
-    verify(repository, times(1)).findById(trainingTypeId);
-  }
+		TrainingType result = trainingTypeRepository.findByTrainingTypeName(trainingTypeName);
 
-  @Test
-  void findById_ShouldThrowTrainingTypeNotFoundException_WhenTrainingTypeDoesNotExist() {
-    when(repository.findById(trainingTypeId)).thenReturn(Optional.empty());
+		assertEquals(trainingType, result);
+		verify(repository, times(1)).findByTrainingTypeName(trainingTypeName);
+	}
 
-    assertThrows(
-        TrainingTypeNotFoundException.class, () -> trainingTypeRepository.findById(trainingTypeId));
-    verify(repository, times(1)).findById(trainingTypeId);
-  }
+	@Test
+	void findByTrainingTypeName_ShouldThrowException_WhenTrainingTypeNameNotExists() {
+		String trainingTypeName = "NonExistent";
+		when(repository.findByTrainingTypeName(trainingTypeName)).thenReturn(Optional.empty());
 
-  @Test
-  void findByTrainingTypeName_ShouldReturnTrainingType_WhenTrainingTypeExists() {
-    String trainingTypeName = "Wrestling";
-    when(repository.findByTrainingTypeName(trainingTypeName)).thenReturn(Optional.of(trainingType));
-
-    TrainingType foundTrainingType =
-        trainingTypeRepository.findByTrainingTypeName(trainingTypeName);
-
-    assertNotNull(foundTrainingType);
-    assertEquals(trainingType, foundTrainingType);
-    verify(repository, times(1)).findByTrainingTypeName(trainingTypeName);
-  }
-
-  @Test
-  void
-      findByTrainingTypeName_ShouldThrowTrainingTypeNotFoundException_WhenTrainingTypeDoesNotExist() {
-    String trainingTypeName = "NonExistent";
-    when(repository.findByTrainingTypeName(trainingTypeName)).thenReturn(Optional.empty());
-
-    assertThrows(
-        TrainingTypeNotFoundException.class,
-        () -> trainingTypeRepository.findByTrainingTypeName(trainingTypeName));
-    verify(repository, times(1)).findByTrainingTypeName(trainingTypeName);
-  }
+		assertThrows(TrainingTypeNotFoundException.class,
+		        () -> trainingTypeRepository.findByTrainingTypeName(trainingTypeName));
+		verify(repository, times(1)).findByTrainingTypeName(trainingTypeName);
+	}
 }

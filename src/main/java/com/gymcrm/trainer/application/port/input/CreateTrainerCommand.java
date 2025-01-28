@@ -7,10 +7,14 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class CreateTrainerCommand {
-  String specialization;
-  User user;
+	String firstName;
+	String lastName;
+	String specialization;
+	User user;
 
-  public CreateTrainerCommand(String specialization) {
-    this.specialization = specialization;
-  }
+	public CreateTrainerCommand(String firstName, String lastName, String specialization) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.specialization = specialization;
+	}
 }

@@ -3,150 +3,225 @@ package com.gymcrm.unit.user.application;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.gymcrm.common.exception.UnauthorizedException;
 import com.gymcrm.user.application.UserService;
+import com.gymcrm.user.application.exception.UserNotFoundException;
 import com.gymcrm.user.application.factory.UserFactory;
+import com.gymcrm.user.application.port.input.AuthenticationUseCase;
 import com.gymcrm.user.application.port.input.CreateUserCommand;
+import com.gymcrm.user.application.port.input.UpdatePasswordCommand;
 import com.gymcrm.user.application.port.output.LoadUserPort;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
 import com.gymcrm.user.domain.UserType;
-import java.util.ArrayList;
+import com.gymcrm.util.UserUtil;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
-  @Mock private UserFactory userFactory;
 
-  @Mock private UpdateUserPort updateUserPort;
+	@Mock
+	private UserFactory userFactory;
 
-  @Mock private LoadUserPort loadUserPort;
+	@Mock
+	private UpdateUserPort updateUserPort;
 
-  @InjectMocks private UserService userService;
+	@Mock
+	private LoadUserPort loadUserPort;
 
-  private CreateUserCommand validCommand;
+	@Mock
+	private AuthenticationUseCase authenticationUseCase;
 
-  @BeforeEach
-  void setUp() {
-    validCommand = new CreateUserCommand("John", "Doe");
-    validCommand.setUserType(UserType.TRAINEE);
-  }
+	@InjectMocks
+	private UserService userService;
 
-  @Test
-  void create_ShouldReturnUser_WhenValidCommandIsProvided() {
-    User mockUser = new User();
-    mockUser.setFirstName("John");
-    mockUser.setLastName("Doe");
-    mockUser.setUsername("john.doe");
-    mockUser.setPassword("randomPass");
+	@BeforeEach
+	void setUp() {
+		// Any necessary setup before each test
+	}
 
-    when(userFactory.createFrom(any(CreateUserCommand.class))).thenReturn(mockUser);
-    when(updateUserPort.save(mockUser)).thenReturn(mockUser);
-    when(loadUserPort.findDistinctUsernamesStartingWith("john.doe")).thenReturn(new ArrayList<>());
+	@Test
+	void create_ShouldReturnUser_WhenValidCommandProvided() {
+		CreateUserCommand command = new CreateUserCommand("John", "Doe", UserType.TRAINER);
+		String generatedUsername = "john.doe";
+		String generatedPassword = "securePassword123";
+		User user = new User(UUID.randomUUID(), "John", "Doe", generatedUsername, generatedPassword, true,
+		        UserType.TRAINER);
 
-    User createdUser = userService.create(validCommand);
+		MockedStatic<UserUtil> mockedUtil = mockStatic(UserUtil.class);
+		mockedUtil.when(() -> UserUtil.getBaseUsername(command.getFirstName(), command.getLastName()))
+		        .thenReturn(generatedUsername);
+		mockedUtil.when(() -> UserUtil.generateUniqueUsername(anySet(), eq(generatedUsername)))
+		        .thenReturn(generatedUsername);
+		mockedUtil.when(UserUtil::generatePassword).thenReturn(generatedPassword);
 
-    assertNotNull(createdUser);
-    assertEquals("John", createdUser.getFirstName());
-    assertEquals("Doe", createdUser.getLastName());
-    verify(userFactory, times(1)).createFrom(any(CreateUserCommand.class));
-    verify(updateUserPort, times(1)).save(any(User.class));
-  }
+		when(loadUserPort.findDistinctUsernamesStartingWith(generatedUsername)).thenReturn(List.of());
+		when(userFactory.createFrom(command)).thenReturn(user);
+		when(updateUserPort.save(user)).thenReturn(user);
 
-  @Test
-  void create_ShouldThrowRuntimeExceptionWithIllegalArgumentException_WhenFirstNameIsNull() {
-    validCommand.setFirstName(null);
+		User result = userService.create(command);
 
-    RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> userService.create(validCommand));
+		assertNotNull(result);
+		assertEquals("John", result.getFirstName());
+		assertEquals("Doe", result.getLastName());
+		assertEquals(generatedUsername, result.getUsername());
+		assertEquals(generatedPassword, result.getPassword());
+		assertEquals(UserType.TRAINER, result.getUserType());
+		verify(updateUserPort, times(1)).save(user);
+	}
 
-    assertInstanceOf(IllegalArgumentException.class, exception.getCause());
-    assertEquals(
-        "First name and last name cannot be null or empty", exception.getCause().getMessage());
-  }
+	@Test
+	void create_ShouldThrowException_WhenFirstNameIsNull() {
+		CreateUserCommand command = new CreateUserCommand(null, "Doe", UserType.TRAINER);
 
-  @Test
-  void create_ShouldThrowRuntimeExceptionWithIllegalArgumentException_WhenLastNameIsBlank() {
-    validCommand.setLastName("   ");
+		RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.create(command));
+		assertInstanceOf(IllegalArgumentException.class, exception.getCause());
+		assertEquals("First name and last name cannot be null or empty", exception.getCause().getMessage());
+		verifyNoInteractions(updateUserPort, userFactory);
+	}
 
-    RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> userService.create(validCommand));
+	@Test
+	void create_ShouldThrowException_WhenLastNameIsBlank() {
+		CreateUserCommand command = new CreateUserCommand("John", "   ", UserType.TRAINER);
 
-    assertInstanceOf(IllegalArgumentException.class, exception.getCause());
-    assertEquals(
-        "First name and last name cannot be null or empty", exception.getCause().getMessage());
-  }
+		RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.create(command));
+		assertInstanceOf(IllegalArgumentException.class, exception.getCause());
+		assertEquals("First name and last name cannot be null or empty", exception.getCause().getMessage());
+		verifyNoInteractions(updateUserPort, userFactory);
+	}
 
-  @Test
-  void create_ShouldGenerateUsernameAndPassword_WhenValidInputProvided() {
-    validCommand.setFirstName("John");
-    validCommand.setLastName("Doe");
-    User mockUser = new User();
-    when(userFactory.createFrom(any(CreateUserCommand.class))).thenReturn(mockUser);
-    when(updateUserPort.save(any(User.class))).thenReturn(mockUser);
-    when(loadUserPort.findDistinctUsernamesStartingWith("john.doe")).thenReturn(new ArrayList<>());
+	@Test
+	void loadUserByUsername_ShouldReturnUser_WhenUserExists() {
+		String username = "john.doe";
+		User mockUser = new User(UUID.randomUUID(), "John", "Doe", username, "password123", true, null);
+		when(loadUserPort.findByUsername(username)).thenReturn(mockUser);
 
-    User createdUser = userService.create(validCommand);
+		User result = userService.loadUserByUsername(username);
 
-    assertNotNull(createdUser);
-    verify(userFactory, times(1)).createFrom(validCommand);
-    verify(updateUserPort, times(1)).save(mockUser);
-  }
+		assertNotNull(result);
+		assertEquals(username, result.getUsername());
+		verify(loadUserPort, times(1)).findByUsername(username);
+	}
 
-  @Test
-  void loadUserByUsername_ShouldReturnUser_WhenUserExists() {
-    User mockUser = new User();
-    mockUser.setUsername("john.doe");
+	@Test
+	void loadUserByUsername_ShouldThrowUserNotFoundException_WhenUserDoesNotExist() {
+		String username = "non-existent-user";
+		when(loadUserPort.findByUsername(username)).thenThrow(new UserNotFoundException("User not found"));
 
-    when(loadUserPort.findByUsername("john.doe")).thenReturn(mockUser);
+		UserNotFoundException exception = assertThrows(UserNotFoundException.class,
+		        () -> userService.loadUserByUsername(username));
+		assertEquals("User not found", exception.getMessage());
+		verify(loadUserPort, times(1)).findByUsername(username);
+	}
 
-    User loadedUser = userService.loadUserByUsername("john.doe");
+	@Test
+	void loadUserByUsername_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
+		String username = "john.doe";
+		when(loadUserPort.findByUsername(username)).thenThrow(new RuntimeException("Database error"));
 
-    assertNotNull(loadedUser);
-    assertEquals("john.doe", loadedUser.getUsername());
-    verify(loadUserPort, times(1)).findByUsername("john.doe");
-  }
+		RuntimeException exception = assertThrows(RuntimeException.class,
+		        () -> userService.loadUserByUsername(username));
+		assertEquals("Failed to fetch user by username", exception.getMessage());
+		verify(loadUserPort, times(1)).findByUsername(username);
+	}
 
-  @Test
-  void loadUserByUsername_ShouldThrowException_WhenUserNotFound() {
-    when(loadUserPort.findByUsername("unknown.user"))
-        .thenThrow(new RuntimeException("User not found"));
+	@Test
+	void loadAll_ShouldReturnListOfUsers_WhenUsersExist() {
+		User user1 = new User(UUID.randomUUID(), "John", "Doe", "john.doe", "password", true, UserType.TRAINER);
+		User user2 = new User(UUID.randomUUID(), "Jane", "Smith", "jane.smith", "password", true, UserType.TRAINEE);
+		when(loadUserPort.findAll()).thenReturn(List.of(user1, user2));
 
-    RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> userService.loadUserByUsername("unknown.user"));
+		List<User> users = userService.loadAll();
 
-    assertEquals("Failed to fetch user by username", exception.getMessage());
-    verify(loadUserPort, times(1)).findByUsername("unknown.user");
-  }
+		assertNotNull(users);
+		assertEquals(2, users.size());
+		assertEquals("John", users.get(0).getFirstName());
+		assertEquals("Jane", users.get(1).getFirstName());
+		verify(loadUserPort, times(1)).findAll();
+	}
 
-  @Test
-  void loadAll_ShouldReturnListOfUsers() {
-    User user1 = new User();
-    user1.setUsername("john.doe");
-    User user2 = new User();
-    user2.setUsername("jane.doe");
-
-    when(loadUserPort.findAll()).thenReturn(List.of(user1, user2));
+	@Test
+  void loadAll_ShouldReturnEmptyList_WhenNoUsersExist() {
+    when(loadUserPort.findAll()).thenReturn(List.of());
 
     List<User> users = userService.loadAll();
 
     assertNotNull(users);
-    assertEquals(2, users.size());
+    assertTrue(users.isEmpty());
     verify(loadUserPort, times(1)).findAll();
   }
 
-  @Test
-  void loadAll_ShouldThrowException_WhenFetchFails() {
+	@Test
+  void loadAll_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
     when(loadUserPort.findAll()).thenThrow(new RuntimeException("Database error"));
 
     RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.loadAll());
-
     assertEquals("Failed to fetch all users", exception.getMessage());
     verify(loadUserPort, times(1)).findAll();
   }
+
+	@Test
+	void updatePassword_ShouldUpdatePassword_WhenCommandIsValid() {
+		UpdatePasswordCommand command = new UpdatePasswordCommand("john.doe", "oldPassword", "newPassword");
+		User user = new User(UUID.randomUUID(), "John", "Doe", "john.doe", "oldPassword", true, UserType.TRAINER);
+		when(loadUserPort.findByUsername(command.getUsername())).thenReturn(user);
+		doNothing().when(authenticationUseCase).authenticate(command.getUsername(), command.getOldPassword());
+		when(updateUserPort.save(user)).thenReturn(user);
+
+		userService.updatePassword(command);
+
+		assertEquals("newPassword", user.getPassword());
+		verify(authenticationUseCase, times(1)).authenticate(command.getUsername(), command.getOldPassword());
+		verify(loadUserPort, times(1)).findByUsername(command.getUsername());
+		verify(updateUserPort, times(1)).save(user);
+	}
+
+	@Test
+	void updatePassword_ShouldThrowUnauthorizedException_WhenAuthenticationFails() {
+		UpdatePasswordCommand command = new UpdatePasswordCommand("john.doe", "wrongPassword", "newPassword");
+		doThrow(new UnauthorizedException("Invalid credentials")).when(authenticationUseCase)
+		        .authenticate(command.getUsername(), command.getOldPassword());
+
+		UnauthorizedException exception = assertThrows(UnauthorizedException.class,
+		        () -> userService.updatePassword(command));
+		assertEquals("Invalid credentials", exception.getMessage());
+		verify(authenticationUseCase, times(1)).authenticate(command.getUsername(), command.getOldPassword());
+		verifyNoInteractions(loadUserPort, updateUserPort);
+	}
+
+	@Test
+	void updatePassword_ShouldThrowUserNotFoundException_WhenUserDoesNotExist() {
+		UpdatePasswordCommand command = new UpdatePasswordCommand("non-existent-user", "oldPassword", "newPassword");
+		when(loadUserPort.findByUsername(command.getUsername())).thenThrow(new UserNotFoundException("User not found"));
+
+		UserNotFoundException exception = assertThrows(UserNotFoundException.class,
+		        () -> userService.updatePassword(command));
+		assertEquals("User not found", exception.getMessage());
+		verify(authenticationUseCase, times(1)).authenticate(command.getUsername(), command.getOldPassword());
+		verify(loadUserPort, times(1)).findByUsername(command.getUsername());
+		verifyNoInteractions(updateUserPort);
+	}
+
+	@Test
+	void updatePassword_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
+		UpdatePasswordCommand command = new UpdatePasswordCommand("john.doe", "oldPassword", "newPassword");
+		User user = new User(UUID.randomUUID(), "John", "Doe", "john.doe", "oldPassword", true, UserType.TRAINER);
+		when(loadUserPort.findByUsername(command.getUsername())).thenReturn(user);
+		doNothing().when(authenticationUseCase).authenticate(command.getUsername(), command.getOldPassword());
+		doThrow(new RuntimeException("Database error")).when(updateUserPort).save(user);
+
+		RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.updatePassword(command));
+		assertEquals("Unexpected error occurred. Please contact support.", exception.getMessage());
+		verify(authenticationUseCase, times(1)).authenticate(command.getUsername(), command.getOldPassword());
+		verify(loadUserPort, times(1)).findByUsername(command.getUsername());
+		verify(updateUserPort, times(1)).save(user);
+	}
 }

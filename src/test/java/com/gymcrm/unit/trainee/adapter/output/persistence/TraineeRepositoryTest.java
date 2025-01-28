@@ -7,13 +7,9 @@ import com.gymcrm.trainee.adapter.output.persistence.TraineePersistenceRepositor
 import com.gymcrm.trainee.adapter.output.persistence.TraineeRepository;
 import com.gymcrm.trainee.application.exception.TraineeNotFoundException;
 import com.gymcrm.trainee.domain.Trainee;
-import com.gymcrm.user.domain.User;
-import com.gymcrm.user.domain.UserType;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,79 +18,117 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class TraineeRepositoryTest {
-  @Mock private TraineePersistenceRepository repository;
+	@Mock
+	private TraineePersistenceRepository repository;
 
-  @InjectMocks private TraineeRepository traineeRepository;
+	@InjectMocks
+	private TraineeRepository traineeRepository;
 
-  private UUID traineeId;
-  private Trainee trainee;
+	@Test
+	void findByIdWithTrainers_ShouldReturnTrainee_WhenTraineeExists() {
+		UUID id = UUID.randomUUID();
+		Trainee mockTrainee = new Trainee();
+		when(repository.findByIdWithTrainers(id)).thenReturn(Optional.of(mockTrainee));
 
-  @BeforeEach
-  void setUp() {
-    traineeId = UUID.randomUUID();
-    User user =
-        new User(
-            UUID.randomUUID(), "John", "Doe", "john.doe", "password123", true, UserType.TRAINEE);
-    trainee = new Trainee(traineeId, LocalDate.of(2000, 1, 1), "123 Main St", user);
-  }
+		Trainee result = traineeRepository.findByIdWithTrainers(id);
 
-  @Test
-  void findById_ShouldReturnTrainee_WhenTraineeExists() {
-    when(repository.findById(traineeId)).thenReturn(Optional.of(trainee));
+		assertNotNull(result);
+		assertEquals(mockTrainee, result);
+		verify(repository, times(1)).findByIdWithTrainers(id);
+	}
 
-    Trainee foundTrainee = traineeRepository.findById(traineeId);
+	@Test
+	void findByIdWithTrainers_ShouldThrowException_WhenTraineeDoesNotExist() {
+		UUID id = UUID.randomUUID();
+		when(repository.findByIdWithTrainers(id)).thenReturn(Optional.empty());
 
-    assertEquals(trainee, foundTrainee);
-    verify(repository, times(1)).findById(traineeId);
-  }
+		TraineeNotFoundException exception = assertThrows(TraineeNotFoundException.class,
+		        () -> traineeRepository.findByIdWithTrainers(id));
 
-  @Test
-  void findById_ShouldThrowException_WhenTraineeDoesNotExist() {
-    when(repository.findById(traineeId)).thenReturn(Optional.empty());
+		assertTrue(exception.getMessage().contains(id.toString()));
+		verify(repository, times(1)).findByIdWithTrainers(id);
+	}
 
-    assertThrows(TraineeNotFoundException.class, () -> traineeRepository.findById(traineeId));
-    verify(repository, times(1)).findById(traineeId);
-  }
+	@Test
+	void findByUsernameWithTrainers_ShouldReturnTrainee_WhenTraineeExists() {
+		String username = "testUser";
+		Trainee mockTrainee = new Trainee();
+		when(repository.findByUsernameWithTrainers(username)).thenReturn(Optional.of(mockTrainee));
 
-  @Test
-  void findAll_ShouldReturnListOfTrainees() {
-    Trainee trainee2 =
-        new Trainee(UUID.randomUUID(), LocalDate.of(1995, 5, 15), "456 Main St", new User());
-    when(repository.findAll()).thenReturn(List.of(trainee, trainee2));
+		Trainee result = traineeRepository.findByUsernameWithTrainers(username);
 
-    List<Trainee> trainees = traineeRepository.findAll();
+		assertNotNull(result);
+		assertEquals(mockTrainee, result);
+		verify(repository, times(1)).findByUsernameWithTrainers(username);
+	}
 
-    assertEquals(2, trainees.size());
-    assertTrue(trainees.contains(trainee));
-    assertTrue(trainees.contains(trainee2));
-    verify(repository, times(1)).findAll();
-  }
+	@Test
+	void findByUsernameWithTrainers_ShouldThrowException_WhenTraineeDoesNotExist() {
+		String username = "testUser";
+		when(repository.findByUsernameWithTrainers(username)).thenReturn(Optional.empty());
 
-  @Test
-  void save_ShouldSaveTrainee() {
-    when(repository.save(trainee)).thenReturn(trainee); // Նշում ենք վերադարձվող արժեքը։
+		TraineeNotFoundException exception = assertThrows(TraineeNotFoundException.class,
+		        () -> traineeRepository.findByUsernameWithTrainers(username));
 
-    traineeRepository.save(trainee);
+		assertTrue(exception.getMessage().contains(username));
+		verify(repository, times(1)).findByUsernameWithTrainers(username);
+	}
 
-    verify(repository, times(1)).save(trainee);
-  }
+	@Test
+	void findByUsername_ShouldReturnTrainee_WhenTraineeExists() {
+		String username = "testUser";
+		Trainee mockTrainee = new Trainee();
+		when(repository.findByUserUsername(username)).thenReturn(Optional.of(mockTrainee));
 
-  @Test
-  void deleteById_ShouldDeleteTrainee_WhenTraineeExists() {
-    doNothing().when(repository).deleteById(traineeId);
+		Trainee result = traineeRepository.findByUsername(username);
 
-    traineeRepository.deleteById(traineeId);
+		assertNotNull(result);
+		assertEquals(mockTrainee, result);
+		verify(repository, times(1)).findByUserUsername(username);
+	}
 
-    verify(repository, times(1)).deleteById(traineeId);
-  }
+	@Test
+	void findByUsername_ShouldThrowException_WhenTraineeDoesNotExist() {
+		String username = "testUser";
+		when(repository.findByUserUsername(username)).thenReturn(Optional.empty());
 
-  @Test
-  void deleteByUsername_ShouldDeleteTraineeByUsername() {
-    String username = "john.doe";
-    doNothing().when(repository).deleteByUsername(username);
+		TraineeNotFoundException exception = assertThrows(TraineeNotFoundException.class,
+		        () -> traineeRepository.findByUsername(username));
 
-    traineeRepository.deleteByUsername(username);
+		assertTrue(exception.getMessage().contains(username));
+		verify(repository, times(1)).findByUserUsername(username);
+	}
 
-    verify(repository, times(1)).deleteByUsername(username);
-  }
+	@Test
+	void findAll_ShouldReturnListOfTrainees() {
+		List<Trainee> mockTrainees = List.of(new Trainee(), new Trainee());
+		when(repository.findAll()).thenReturn(mockTrainees);
+
+		List<Trainee> result = traineeRepository.findAll();
+
+		assertNotNull(result);
+		assertEquals(2, result.size());
+		verify(repository, times(1)).findAll();
+	}
+
+	@Test
+	void save_ShouldReturnSavedTrainee() {
+		Trainee trainee = new Trainee();
+		when(repository.save(trainee)).thenReturn(trainee);
+
+		Trainee result = traineeRepository.save(trainee);
+
+		assertNotNull(result);
+		assertEquals(trainee, result);
+		verify(repository, times(1)).save(trainee);
+	}
+
+	@Test
+	void deleteByUsername_ShouldCallRepositoryMethod() {
+		String username = "testUser";
+
+		traineeRepository.deleteByUsername(username);
+
+		verify(repository, times(1)).deleteByUsername(username);
+	}
 }

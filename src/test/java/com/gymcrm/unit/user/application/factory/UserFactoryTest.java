@@ -9,7 +9,6 @@ import com.gymcrm.user.application.port.input.CreateUserCommand;
 import com.gymcrm.user.domain.User;
 import com.gymcrm.user.domain.UserType;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,50 +17,49 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class UserFactoryTest {
-  @Mock private UUIDGeneratorInterface uuidGenerator;
+	@Mock
+	private UUIDGeneratorInterface uuidGenerator;
 
-  @InjectMocks private UserFactory userFactory;
+	@InjectMocks
+	private UserFactory userFactory;
 
-  private CreateUserCommand command;
+	@Test
+	void createFrom_ShouldReturnUser_WhenValidCommandProvided() {
+		UUID uuid = UUID.randomUUID();
+		CreateUserCommand command = new CreateUserCommand("John", "Doe", "john.doe", "password123", UserType.TRAINER);
+		when(uuidGenerator.newUUID()).thenReturn(uuid);
 
-  @BeforeEach
-  void setUp() {
-    command = new CreateUserCommand("John", "Doe", "john-doe", "password123", UserType.ADMIN);
-  }
+		User user = userFactory.createFrom(command);
 
-  @Test
-  void createFrom_ShouldReturnUserWithCorrectData() {
-    UUID generatedUUID = UUID.randomUUID();
-    when(uuidGenerator.newUUID()).thenReturn(generatedUUID);
+		assertNotNull(user);
+		assertEquals(uuid, user.getId());
+		assertEquals(command.getFirstName(), user.getFirstName());
+		assertEquals(command.getLastName(), user.getLastName());
+		assertEquals(command.getUsername(), user.getUsername());
+		assertEquals(command.getPassword(), user.getPassword());
+		assertTrue(user.getIsActive());
+		assertEquals(command.getUserType(), user.getUserType());
 
-    User user = userFactory.createFrom(command);
+		verify(uuidGenerator, times(1)).newUUID();
+	}
 
-    assertNotNull(user);
-    assertEquals(generatedUUID, user.getId());
-    assertEquals(command.getFirstName(), user.getFirstName());
-    assertEquals(command.getLastName(), user.getLastName());
-    assertEquals(command.getUsername(), user.getUsername());
-    assertEquals(command.getPassword(), user.getPassword());
-    assertTrue(user.getIsActive());
-    assertEquals(command.getUserType(), user.getUserType());
+	@Test
+	void createFrom_ShouldHandleEmptyFieldsGracefully() {
+		UUID uuid = UUID.randomUUID();
+		CreateUserCommand command = new CreateUserCommand("fName", "lName", UserType.TRAINEE);
+		when(uuidGenerator.newUUID()).thenReturn(uuid);
 
-    verify(uuidGenerator, times(1)).newUUID();
-  }
+		User user = userFactory.createFrom(command);
 
-  @Test
-  void createFrom_ShouldHandleNullUserType() {
-    command.setUserType(null);
-    UUID generatedUUID = UUID.randomUUID();
-    when(uuidGenerator.newUUID()).thenReturn(generatedUUID);
+		assertNotNull(user);
+		assertEquals(uuid, user.getId());
+		assertEquals("fName", user.getFirstName());
+		assertEquals("lName", user.getLastName());
+		assertNull(user.getUsername());
+		assertNull(user.getPassword());
+		assertTrue(user.getIsActive());
+		assertEquals(UserType.TRAINEE, user.getUserType());
 
-    User user = userFactory.createFrom(command);
-
-    assertNotNull(user);
-    assertEquals(generatedUUID, user.getId());
-    assertEquals(command.getFirstName(), user.getFirstName());
-    assertEquals(command.getLastName(), user.getLastName());
-    assertNull(user.getUserType());
-
-    verify(uuidGenerator, times(1)).newUUID();
-  }
+		verify(uuidGenerator, times(1)).newUUID();
+	}
 }

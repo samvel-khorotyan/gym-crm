@@ -11,35 +11,40 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class TraineeRepository implements UpdateTraineePort, LoadTraineePort {
-  private final TraineePersistenceRepository repository;
+	private final TraineePersistenceRepository repository;
 
-  @Autowired
-  public TraineeRepository(TraineePersistenceRepository repository) {
-    this.repository = repository;
-  }
+	@Autowired
+	public TraineeRepository(TraineePersistenceRepository repository) {
+		this.repository = repository;
+	}
 
-  @Override
-  public Trainee findById(UUID id) {
-    return repository.findById(id).orElseThrow(() -> TraineeNotFoundException.by(id));
-  }
+	@Override
+	public Trainee findByIdWithTrainers(UUID id) {
+		return repository.findByIdWithTrainers(id).orElseThrow(() -> TraineeNotFoundException.by(id));
+	}
 
-  @Override
-  public List<Trainee> findAll() {
-    return repository.findAll();
-  }
+	@Override
+	public Trainee findByUsernameWithTrainers(String username) {
+		return repository.findByUsernameWithTrainers(username).orElseThrow(() -> TraineeNotFoundException.by(username));
+	}
 
-  @Override
-  public void save(Trainee trainee) {
-    repository.save(trainee);
-  }
+	@Override
+	public Trainee findByUsername(String username) {
+		return repository.findByUserUsername(username).orElseThrow(() -> TraineeNotFoundException.by(username));
+	}
 
-  @Override
-  public void deleteById(UUID id) {
-    repository.deleteById(id);
-  }
+	@Override
+	public List<Trainee> findAll() {
+		return repository.findAll();
+	}
 
-  @Override
-  public void deleteByUsername(String username) {
-    repository.deleteByUsername(username);
-  }
+	@Override
+	public Trainee save(Trainee trainee) {
+		return repository.save(trainee);
+	}
+
+	@Override
+	public void deleteByUsername(String username) {
+		repository.deleteByUsername(username);
+	}
 }

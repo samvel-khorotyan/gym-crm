@@ -7,13 +7,13 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TrainerFactory {
-  private final UUIDGeneratorInterface uuidGenerator;
+	private final UUIDGeneratorInterface uuidGenerator;
 
-  public TrainerFactory(UUIDGeneratorInterface uuidGenerator) {
-    this.uuidGenerator = uuidGenerator;
-  }
+	public TrainerFactory(UUIDGeneratorInterface uuidGenerator) {
+		this.uuidGenerator = uuidGenerator;
+	}
 
-  public Trainer createFrom(CreateTrainerCommand command) {
-    return new Trainer(uuidGenerator.newUUID(), command.getSpecialization(), command.getUser());
-  }
+	public Trainer createFrom(CreateTrainerCommand command) {
+		return new Trainer(uuidGenerator.newUUID(), command.getSpecialization(), command.getUser());
+	}
 }

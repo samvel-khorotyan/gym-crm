@@ -9,76 +9,74 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 class UserUtilTest {
-  @Test
-  void generateUniqueUsername_ShouldReturnUniqueUsername_WhenUsernameDoesNotExist() {
-    Set<String> existingUsernames = new HashSet<>();
-    existingUsernames.add("john.doe1");
-    existingUsernames.add("john.doe2");
+	@Test
+	void generateUniqueUsername_ShouldReturnUniqueUsername_WhenUsernameDoesNotExist() {
+		Set<String> existingUsernames = new HashSet<>();
+		existingUsernames.add("john.doe1");
+		existingUsernames.add("john.doe2");
 
-    String baseUsername = "john.doe";
+		String baseUsername = "john.doe";
 
-    String uniqueUsername = UserUtil.generateUniqueUsername(existingUsernames, baseUsername);
+		String uniqueUsername = UserUtil.generateUniqueUsername(existingUsernames, baseUsername);
 
-    assertEquals("john.doe", uniqueUsername);
-  }
+		assertEquals("john.doe", uniqueUsername);
+	}
 
-  @Test
-  void generateUniqueUsername_ShouldReturnUniqueUsername_WhenUsernameExists() {
-    Set<String> existingUsernames = new HashSet<>();
-    existingUsernames.add("john.doe");
-    existingUsernames.add("john.doe1");
+	@Test
+	void generateUniqueUsername_ShouldReturnUniqueUsername_WhenUsernameExists() {
+		Set<String> existingUsernames = new HashSet<>();
+		existingUsernames.add("john.doe");
+		existingUsernames.add("john.doe1");
 
-    String baseUsername = "john.doe";
+		String baseUsername = "john.doe";
 
-    String uniqueUsername = UserUtil.generateUniqueUsername(existingUsernames, baseUsername);
+		String uniqueUsername = UserUtil.generateUniqueUsername(existingUsernames, baseUsername);
 
-    assertEquals("john.doe2", uniqueUsername);
-  }
+		assertEquals("john.doe2", uniqueUsername);
+	}
 
-  @Test
-  void getBaseUsername_ShouldReturnFormattedUsername_WhenValidNamesAreProvided() {
-    String firstName = " John ";
-    String lastName = " Doe ";
+	@Test
+	void getBaseUsername_ShouldReturnFormattedUsername_WhenValidNamesAreProvided() {
+		String firstName = " John ";
+		String lastName = " Doe ";
 
-    String baseUsername = UserUtil.getBaseUsername(firstName, lastName);
+		String baseUsername = UserUtil.getBaseUsername(firstName, lastName);
 
-    assertEquals("john.doe", baseUsername);
-  }
+		assertEquals("john.doe", baseUsername);
+	}
 
-  @Test
-  void getBaseUsername_ShouldThrowException_WhenFirstNameIsNull() {
-    String lastName = "Doe";
+	@Test
+	void getBaseUsername_ShouldThrowException_WhenFirstNameIsNull() {
+		String lastName = "Doe";
 
-    IllegalArgumentException exception =
-        assertThrows(
-            IllegalArgumentException.class, () -> UserUtil.getBaseUsername(null, lastName));
+		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+		        () -> UserUtil.getBaseUsername(null, lastName));
 
-    assertEquals("First name cannot be null or empty.", exception.getMessage());
-  }
+		assertEquals("First name cannot be null or empty.", exception.getMessage());
+	}
 
-  @Test
-  void getBaseUsername_ShouldThrowException_WhenLastNameIsBlank() {
-    String firstName = "John";
+	@Test
+	void getBaseUsername_ShouldThrowException_WhenLastNameIsBlank() {
+		String firstName = "John";
 
-    IllegalArgumentException exception =
-        assertThrows(
-            IllegalArgumentException.class, () -> UserUtil.getBaseUsername(firstName, "   "));
+		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+		        () -> UserUtil.getBaseUsername(firstName, "   "));
 
-    assertEquals("Last name cannot be null or empty.", exception.getMessage());
-  }
+		assertEquals("Last name cannot be null or empty.", exception.getMessage());
+	}
 
-  @Test
-  void generatePassword_ShouldReturnPasswordOfCorrectLength() {
-    String password = UserUtil.generatePassword();
+	@Test
+	void generatePassword_ShouldReturnPasswordOfCorrectLength() {
+		String password = UserUtil.generatePassword();
 
-    assertNotNull(password);
-    assertEquals(12, password.length());
-  }
+		assertNotNull(password);
+		assertEquals(12, password.length());
+	}
 
-  @Test
-  void generatePassword_ShouldReturnAlphanumericPassword() {
-    String password = UserUtil.generatePassword();
+	@Test
+	void generatePassword_ShouldReturnAlphanumericPassword() {
+		String password = UserUtil.generatePassword();
 
-    assertTrue(StringUtils.isAlphanumeric(password), "Password should be alphanumeric");
-  }
+		assertTrue(StringUtils.isAlphanumeric(password), "Password should be alphanumeric");
+	}
 }

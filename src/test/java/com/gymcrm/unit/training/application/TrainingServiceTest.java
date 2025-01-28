@@ -3,9 +3,12 @@ package com.gymcrm.unit.training.application;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.gymcrm.trainee.application.port.input.TraineeUpdateUseCase;
-import com.gymcrm.trainee.application.port.input.UpdateTraineeCommand;
+import com.gymcrm.trainee.application.exception.TraineeNotFoundException;
+import com.gymcrm.trainee.application.port.output.LoadTraineePort;
+import com.gymcrm.trainee.application.port.output.UpdateTraineePort;
 import com.gymcrm.trainee.domain.Trainee;
+import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
+import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.application.TrainingService;
 import com.gymcrm.training.application.factory.TrainingFactory;
@@ -13,11 +16,12 @@ import com.gymcrm.training.application.port.input.CreateTrainingCommand;
 import com.gymcrm.training.application.port.output.LoadTrainingPort;
 import com.gymcrm.training.application.port.output.UpdateTrainingPort;
 import com.gymcrm.training.domain.Training;
+import com.gymcrm.trainingtype.application.port.output.LoadTrainingTypePort;
 import com.gymcrm.trainingtype.domain.TrainingType;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,110 +30,326 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingServiceTest {
-  @Mock private UpdateTrainingPort updateTrainingPort;
+	@Mock
+	private UpdateTrainingPort updateTrainingPort;
 
-  @Mock private LoadTrainingPort loadTrainingPort;
+	@Mock
+	private LoadTrainingTypePort loadTrainingTypePort;
 
-  @Mock private TrainingFactory trainingFactory;
+	@Mock
+	private LoadTraineePort loadTraineePort;
 
-  @Mock private TraineeUpdateUseCase traineeUpdateUseCase;
+	@Mock
+	private LoadTrainerPort loadTrainerPort;
 
-  @InjectMocks private TrainingService trainingService;
+	@Mock
+	private UpdateTraineePort updateTraineePort;
 
-  private CreateTrainingCommand validCommand;
+	@Mock
+	private TrainingFactory trainingFactory;
 
-  @BeforeEach
-  void setUp() {
-    Trainee trainee = new Trainee();
-    Trainer trainer = new Trainer();
-    TrainingType trainingType = new TrainingType();
+	@Mock
+	private LoadTrainingPort loadTrainingPort;
 
-    validCommand =
-        new CreateTrainingCommand(
-            "Wrestling Training", trainee, trainer, trainingType, LocalDate.now(), 60);
-  }
+	@InjectMocks
+	private TrainingService trainingService;
 
-  @Test
-  void create_ShouldSaveTraining_WhenValidCommandIsProvided() {
-    Training training = new Training();
-    when(trainingFactory.createFrom(validCommand)).thenReturn(training);
+	@Test
+	void create_ShouldCreateTrainingSuccessfully() {
+		String traineeUsername = "trainee1";
+		String trainerUsername = "trainer1";
+		String trainingName = "Strength Training";
+		LocalDate trainingDate = LocalDate.of(2025, 1, 20);
+		Integer trainingDuration = 60;
 
-    trainingService.create(validCommand);
+		Trainee trainee = new Trainee();
+		Trainer trainer = new Trainer();
+		TrainingType trainingType = new TrainingType(UUID.randomUUID(), "Strength Training");
+		Training training = new Training();
 
-    verify(trainingFactory, times(1)).createFrom(validCommand);
-    verify(traineeUpdateUseCase, times(1)).updateTrainersOfTrainee(any(UpdateTraineeCommand.class));
-    verify(updateTrainingPort, times(1)).save(training);
-  }
+		CreateTrainingCommand command = new CreateTrainingCommand(traineeUsername, trainerUsername, trainingName,
+		        trainingDate, trainingDuration);
 
-  @Test
-  void loadById_ShouldReturnTraining_WhenIdIsValid() {
-    UUID trainingId = UUID.randomUUID();
-    Training training = new Training();
-    when(loadTrainingPort.findById(trainingId)).thenReturn(training);
+		when(loadTraineePort.findByUsername(traineeUsername)).thenReturn(trainee);
+		when(loadTrainerPort.findByUsername(trainerUsername)).thenReturn(trainer);
+		when(loadTrainingTypePort.findByTrainingTypeName(trainingName)).thenReturn(trainingType);
+		when(trainingFactory.createFrom(command)).thenReturn(training);
 
-    Training result = trainingService.loadById(trainingId);
+		trainingService.create(command);
 
-    assertNotNull(result);
-    assertEquals(training, result);
-    verify(loadTrainingPort, times(1)).findById(trainingId);
-  }
+		verify(updateTraineePort).save(trainee);
+		verify(updateTrainingPort).save(training);
+	}
 
-  @Test
-  void loadById_ShouldThrowIllegalArgumentException_WhenIdIsNull() {
-    IllegalArgumentException exception =
-        assertThrows(IllegalArgumentException.class, () -> trainingService.loadById(null));
+	@Test
+	void create_ShouldThrowTraineeNotFoundException() {
+		String traineeUsername = "invalidTrainee";
+		CreateTrainingCommand command = new CreateTrainingCommand(traineeUsername, "trainer1", "Yoga Training",
+		        LocalDate.now(), 45);
 
-    assertEquals("Training ID cannot be null.", exception.getMessage());
-  }
+		when(loadTraineePort.findByUsername(traineeUsername))
+		        .thenThrow(new TraineeNotFoundException("Trainee not found"));
 
-  @Test
-  void loadAll_ShouldReturnListOfTrainings() {
-    List<Training> trainings = List.of(new Training(), new Training());
-    when(loadTrainingPort.findAll()).thenReturn(trainings);
+		assertThrows(TraineeNotFoundException.class, () -> trainingService.create(command));
+
+		verifyNoInteractions(loadTrainerPort);
+		verifyNoInteractions(updateTrainingPort);
+	}
+
+	@Test
+	void create_ShouldThrowTrainerNotFoundException() {
+		String traineeUsername = "trainee1";
+		String trainerUsername = "invalidTrainer";
+		CreateTrainingCommand command = new CreateTrainingCommand(traineeUsername, trainerUsername, "Yoga Training",
+		        LocalDate.now(), 45);
+
+		Trainee trainee = new Trainee();
+		when(loadTraineePort.findByUsername(traineeUsername)).thenReturn(trainee);
+		when(loadTrainerPort.findByUsername(trainerUsername))
+		        .thenThrow(new TrainerNotFoundException("Trainer not found"));
+
+		assertThrows(TrainerNotFoundException.class, () -> trainingService.create(command));
+
+		verify(loadTraineePort).findByUsername(traineeUsername);
+		verifyNoInteractions(updateTrainingPort);
+	}
+
+	@Test
+	void create_ShouldThrowExceptionWhenTrainingTypeNotFound() {
+		String traineeUsername = "trainee1";
+		String trainerUsername = "trainer1";
+		String trainingName = "Invalid Training";
+		CreateTrainingCommand command = new CreateTrainingCommand(traineeUsername, trainerUsername, trainingName,
+		        LocalDate.now(), 45);
+
+		Trainee trainee = new Trainee();
+		Trainer trainer = new Trainer();
+		when(loadTraineePort.findByUsername(traineeUsername)).thenReturn(trainee);
+		when(loadTrainerPort.findByUsername(trainerUsername)).thenReturn(trainer);
+		when(loadTrainingTypePort.findByTrainingTypeName(trainingName))
+		        .thenThrow(new RuntimeException("Training type not found"));
+
+		assertThrows(RuntimeException.class, () -> trainingService.create(command));
+
+		verify(loadTraineePort).findByUsername(traineeUsername);
+		verify(loadTrainerPort).findByUsername(trainerUsername);
+		verifyNoInteractions(updateTrainingPort);
+	}
+
+	@Test
+	void create_ShouldAddTrainerToTraineeWhenTrainerListIsNull() {
+		String traineeUsername = "trainee1";
+		String trainerUsername = "trainer1";
+		String trainingName = "Strength Training";
+		LocalDate trainingDate = LocalDate.of(2025, 1, 20);
+		Integer trainingDuration = 60;
+
+		Trainee trainee = new Trainee();
+		trainee.setTrainers(null);
+		Trainer trainer = new Trainer();
+		TrainingType trainingType = new TrainingType(UUID.randomUUID(), "Strength Training");
+		Training training = new Training();
+
+		CreateTrainingCommand command = new CreateTrainingCommand(traineeUsername, trainerUsername, trainingName,
+		        trainingDate, trainingDuration);
+
+		when(loadTraineePort.findByUsername(traineeUsername)).thenReturn(trainee);
+		when(loadTrainerPort.findByUsername(trainerUsername)).thenReturn(trainer);
+		when(loadTrainingTypePort.findByTrainingTypeName(trainingName)).thenReturn(trainingType);
+		when(trainingFactory.createFrom(command)).thenReturn(training);
+
+		trainingService.create(command);
+
+		verify(updateTraineePort).save(trainee);
+		verify(updateTrainingPort).save(training);
+	}
+
+	@Test
+	void loadAll_ShouldReturnListOfTrainings_WhenTrainingsExist() {
+		List<Training> mockTrainings = new ArrayList<>();
+		mockTrainings.add(new Training());
+		mockTrainings.add(new Training());
+
+		when(loadTrainingPort.findAll()).thenReturn(mockTrainings);
+
+		List<Training> result = trainingService.loadAll();
+
+		assertNotNull(result, "Result should not be null");
+		assertEquals(2, result.size(), "Result size should match the number of trainings");
+		verify(loadTrainingPort, times(1)).findAll();
+	}
+
+	@Test
+  void loadAll_ShouldReturnEmptyList_WhenNoTrainingsExist() {
+    when(loadTrainingPort.findAll()).thenReturn(new ArrayList<>());
 
     List<Training> result = trainingService.loadAll();
 
-    assertNotNull(result);
-    assertEquals(2, result.size());
+    assertNotNull(result, "Result should not be null");
+    assertTrue(result.isEmpty(), "Result should be an empty list");
     verify(loadTrainingPort, times(1)).findAll();
   }
 
-  @Test
-  void findTraineeTrainingsByCriteria_ShouldReturnTrainings_WhenCriteriaProvided() {
-    LocalDate startDate = LocalDate.now().minusDays(10);
-    LocalDate endDate = LocalDate.now();
-    String trainerName = "John Doe";
-    String trainingType = "Wrestling";
-    List<Training> trainings = List.of(new Training());
-    when(loadTrainingPort.findTraineeTrainingsByCriteria(
-            startDate, endDate, trainerName, trainingType))
-        .thenReturn(trainings);
+	@Test
+  void loadAll_ShouldThrowRuntimeException_WhenLoadTrainingPortFails() {
+    when(loadTrainingPort.findAll()).thenThrow(new RuntimeException("Database error"));
 
-    List<Training> result =
-        trainingService.findTraineeTrainingsByCriteria(
-            startDate, endDate, trainerName, trainingType);
-
-    assertNotNull(result);
-    assertEquals(1, result.size());
-    verify(loadTrainingPort, times(1))
-        .findTraineeTrainingsByCriteria(startDate, endDate, trainerName, trainingType);
+    RuntimeException exception = assertThrows(RuntimeException.class, trainingService::loadAll);
+    assertEquals(
+        "Failed to fetch trainings", exception.getMessage(), "Exception message should match");
+    verify(loadTrainingPort, times(1)).findAll();
   }
 
-  @Test
-  void findTrainerTrainingsByCriteria_ShouldReturnTrainings_WhenCriteriaProvided() {
-    LocalDate startDate = LocalDate.now().minusDays(10);
-    LocalDate endDate = LocalDate.now();
-    String traineeName = "Jane Doe";
-    List<Training> trainings = List.of(new Training());
-    when(loadTrainingPort.findTrainerTrainingsByCriteria(startDate, endDate, traineeName))
-        .thenReturn(trainings);
+	@Test
+	void findTraineeTrainingsByCriteria_ShouldReturnTrainings_WhenCriteriaMatch() {
+		String username = "trainee1";
+		LocalDate startDate = LocalDate.of(2023, 1, 1);
+		LocalDate endDate = LocalDate.of(2023, 12, 31);
+		String trainerName = "Trainer A";
+		String trainingType = "Strength";
 
-    List<Training> result =
-        trainingService.findTrainerTrainingsByCriteria(startDate, endDate, traineeName);
+		List<Training> mockTrainings = List.of(new Training(), new Training());
 
-    assertNotNull(result);
-    assertEquals(1, result.size());
-    verify(loadTrainingPort, times(1))
-        .findTrainerTrainingsByCriteria(startDate, endDate, traineeName);
-  }
+		when(loadTrainingPort.findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName, trainingType))
+		        .thenReturn(mockTrainings);
+
+		List<Training> result = trainingService.findTraineeTrainingsByCriteria(username, startDate, endDate,
+		        trainerName, trainingType);
+
+		assertNotNull(result, "Result should not be null");
+		assertEquals(2, result.size(), "Result size should match the number of trainings");
+		verify(loadTrainingPort, times(1)).findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName,
+		        trainingType);
+	}
+
+	@Test
+	void findTraineeTrainingsByCriteria_ShouldReturnEmptyList_WhenNoMatchFound() {
+		String username = "trainee1";
+		LocalDate startDate = LocalDate.of(2023, 1, 1);
+		LocalDate endDate = LocalDate.of(2023, 12, 31);
+		String trainerName = "Trainer A";
+		String trainingType = "Strength";
+
+		when(loadTrainingPort.findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName, trainingType))
+		        .thenReturn(new ArrayList<>());
+
+		List<Training> result = trainingService.findTraineeTrainingsByCriteria(username, startDate, endDate,
+		        trainerName, trainingType);
+
+		assertNotNull(result, "Result should not be null");
+		assertTrue(result.isEmpty(), "Result should be an empty list");
+		verify(loadTrainingPort, times(1)).findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName,
+		        trainingType);
+	}
+
+	@Test
+	void findTraineeTrainingsByCriteria_ShouldThrowTraineeNotFoundException_WhenTraineeDoesNotExist() {
+		String username = "nonexistent_trainee";
+		LocalDate startDate = LocalDate.of(2023, 1, 1);
+		LocalDate endDate = LocalDate.of(2023, 12, 31);
+		String trainerName = "Trainer A";
+		String trainingType = "Strength";
+
+		when(loadTrainingPort.findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName, trainingType))
+		        .thenThrow(new TraineeNotFoundException("Trainee not found"));
+
+		TraineeNotFoundException exception = assertThrows(TraineeNotFoundException.class, () -> trainingService
+		        .findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName, trainingType));
+
+		assertEquals("Trainee not found", exception.getMessage(), "Exception message should match");
+		verify(loadTrainingPort, times(1)).findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName,
+		        trainingType);
+	}
+
+	@Test
+	void findTraineeTrainingsByCriteria_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
+		String username = "trainee1";
+		LocalDate startDate = LocalDate.of(2023, 1, 1);
+		LocalDate endDate = LocalDate.of(2023, 12, 31);
+		String trainerName = "Trainer A";
+		String trainingType = "Strength";
+
+		when(loadTrainingPort.findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName, trainingType))
+		        .thenThrow(new RuntimeException("Unexpected error"));
+
+		RuntimeException exception = assertThrows(RuntimeException.class, () -> trainingService
+		        .findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName, trainingType));
+
+		assertEquals("Failed to fetch trainings by criteria", exception.getMessage(), "Exception message should match");
+		verify(loadTrainingPort, times(1)).findTraineeTrainingsByCriteria(username, startDate, endDate, trainerName,
+		        trainingType);
+	}
+
+	@Test
+	void findTrainerTrainingsByCriteria_ShouldReturnTrainings_WhenCriteriaMatch() {
+		String username = "trainer1";
+		LocalDate startDate = LocalDate.of(2023, 1, 1);
+		LocalDate endDate = LocalDate.of(2023, 12, 31);
+		String traineeName = "Trainee A";
+
+		List<Training> mockTrainings = List.of(new Training(), new Training());
+
+		when(loadTrainingPort.findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName))
+		        .thenReturn(mockTrainings);
+
+		List<Training> result = trainingService.findTrainerTrainingsByCriteria(username, startDate, endDate,
+		        traineeName);
+
+		assertNotNull(result, "Result should not be null");
+		assertEquals(2, result.size(), "Result size should match the number of trainings");
+		verify(loadTrainingPort, times(1)).findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName);
+	}
+
+	@Test
+	void findTrainerTrainingsByCriteria_ShouldReturnEmptyList_WhenNoMatchFound() {
+		String username = "trainer1";
+		LocalDate startDate = LocalDate.of(2023, 1, 1);
+		LocalDate endDate = LocalDate.of(2023, 12, 31);
+		String traineeName = "Trainee A";
+
+		when(loadTrainingPort.findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName))
+		        .thenReturn(new ArrayList<>());
+
+		List<Training> result = trainingService.findTrainerTrainingsByCriteria(username, startDate, endDate,
+		        traineeName);
+
+		assertNotNull(result, "Result should not be null");
+		assertTrue(result.isEmpty(), "Result should be an empty list");
+		verify(loadTrainingPort, times(1)).findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName);
+	}
+
+	@Test
+	void findTrainerTrainingsByCriteria_ShouldThrowTrainerNotFoundException_WhenTrainerDoesNotExist() {
+		String username = "nonexistent_trainer";
+		LocalDate startDate = LocalDate.of(2023, 1, 1);
+		LocalDate endDate = LocalDate.of(2023, 12, 31);
+		String traineeName = "Trainee A";
+
+		when(loadTrainingPort.findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName))
+		        .thenThrow(new TrainerNotFoundException("Trainer not found"));
+
+		TrainerNotFoundException exception = assertThrows(TrainerNotFoundException.class,
+		        () -> trainingService.findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName));
+
+		assertEquals("Trainer not found", exception.getMessage(), "Exception message should match");
+		verify(loadTrainingPort, times(1)).findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName);
+	}
+
+	@Test
+	void findTrainerTrainingsByCriteria_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
+		String username = "trainer1";
+		LocalDate startDate = LocalDate.of(2023, 1, 1);
+		LocalDate endDate = LocalDate.of(2023, 12, 31);
+		String traineeName = "Trainee A";
+
+		when(loadTrainingPort.findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName))
+		        .thenThrow(new RuntimeException("Unexpected error"));
+
+		RuntimeException exception = assertThrows(RuntimeException.class,
+		        () -> trainingService.findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName));
+
+		assertEquals("Failed to fetch trainings by criteria.", exception.getMessage(),
+		        "Exception message should match");
+		verify(loadTrainingPort, times(1)).findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName);
+	}
 }

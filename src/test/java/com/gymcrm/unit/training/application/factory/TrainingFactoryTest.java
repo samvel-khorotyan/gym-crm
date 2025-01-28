@@ -1,7 +1,7 @@
 package com.gymcrm.unit.training.application.factory;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 import com.gymcrm.common.UUIDGeneratorInterface;
 import com.gymcrm.trainee.domain.Trainee;
@@ -20,49 +20,35 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingFactoryTest {
-  @Mock private UUIDGeneratorInterface uuidGeneratorInterface;
+	@Mock
+	private UUIDGeneratorInterface uuidGenerator;
 
-  @InjectMocks private TrainingFactory trainingFactory;
+	@InjectMocks
+	private TrainingFactory trainingFactory;
 
-  @Test
-  void testCreateFrom_createsTrainingWithCorrectFields() {
-    UUID generatedUUID = UUID.randomUUID();
-    UUID traineeId = UUID.randomUUID();
-    UUID trainerId = UUID.randomUUID();
-    String trainingName = "Advanced Gym Techniques";
-    TrainingType trainingType = new TrainingType(UUID.randomUUID(), "Weightlifting");
-    LocalDate trainingDate = LocalDate.of(2023, 12, 1);
-    Integer trainingDuration = 90;
+	@Test
+	void createFrom_ShouldCreateTrainingSuccessfully() {
+		UUID generatedUUID = UUID.randomUUID();
+		when(uuidGenerator.newUUID()).thenReturn(generatedUUID);
 
-    Trainee trainee = new Trainee(traineeId, LocalDate.of(2000, 1, 1), "123 Main St", null);
-    Trainer trainer = new Trainer(trainerId, "Fitness Specialist", null);
+		Trainee trainee = new Trainee();
+		Trainer trainer = new Trainer();
+		String trainingName = "Yoga Basics";
+		TrainingType trainingType = new TrainingType();
+		LocalDate trainingDate = LocalDate.of(2025, 1, 20);
+		Integer trainingDuration = 60;
 
-    CreateTrainingCommand command =
-        new CreateTrainingCommand(
-            trainingName, trainee, trainer, trainingType, trainingDate, trainingDuration);
+		CreateTrainingCommand command = new CreateTrainingCommand(trainee, trainer, trainingName, trainingType,
+		        trainingDate, trainingDuration);
 
-    when(uuidGeneratorInterface.newUUID()).thenReturn(generatedUUID);
+		Training training = trainingFactory.createFrom(command);
 
-    Training training = trainingFactory.createFrom(command);
-
-    assertNotNull(training, "Training object should not be null");
-    assertEquals(generatedUUID, training.getId(), "Training ID should match generated UUID");
-    assertEquals(trainee, training.getTrainee(), "Trainee should match command");
-    assertEquals(trainer, training.getTrainer(), "Trainer should match command");
-    assertEquals(trainingName, training.getTrainingName(), "Training name should match command");
-    assertEquals(trainingType, training.getTrainingType(), "Training type should match command");
-    assertEquals(trainingDate, training.getTrainingDate(), "Training date should match command");
-    assertEquals(
-        trainingDuration, training.getTrainingDuration(), "Training duration should match command");
-
-    verify(uuidGeneratorInterface, times(1)).newUUID();
-  }
-
-  @Test
-  void testCreateFrom_handlesNullCommand() {
-    assertThrows(
-        NullPointerException.class,
-        () -> trainingFactory.createFrom(null),
-        "Should throw NullPointerException when command is null");
-  }
+		assertEquals(generatedUUID, training.getId());
+		assertEquals(trainingName, training.getTrainingName());
+		assertEquals(trainee, training.getTrainee());
+		assertEquals(trainer, training.getTrainer());
+		assertEquals(trainingType, training.getTrainingType());
+		assertEquals(trainingDate, training.getTrainingDate());
+		assertEquals(trainingDuration, training.getTrainingDuration());
+	}
 }

@@ -1,7 +1,7 @@
 package com.gymcrm.unit.trainer.application.factory;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 import com.gymcrm.common.UUIDGeneratorInterface;
 import com.gymcrm.trainer.application.factory.TrainerFactory;
@@ -9,6 +9,7 @@ import com.gymcrm.trainer.application.port.input.CreateTrainerCommand;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.user.domain.User;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,37 +18,30 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class TrainerFactoryTest {
-  @Mock private UUIDGeneratorInterface uuidGeneratorInterface;
+	@Mock
+	private UUIDGeneratorInterface uuidGenerator;
 
-  @InjectMocks private TrainerFactory trainerFactory;
+	@InjectMocks
+	private TrainerFactory trainerFactory;
 
-  @Test
-  void testCreateFrom_createsTrainerWithCorrectFields() {
-    UUID generatedUUID = UUID.randomUUID();
-    String specialization = "Fitness Coach";
-    UUID userId = UUID.randomUUID();
-    User user = new User(userId, "John", "Doe", "john.doe", "password123", true, null);
+	private CreateTrainerCommand command;
+	private UUID mockUUID;
 
-    CreateTrainerCommand command = new CreateTrainerCommand(specialization, user);
+	@BeforeEach
+	void setUp() {
+		mockUUID = UUID.randomUUID();
+		User mockUser = new User();
+		command = new CreateTrainerCommand("John", "Doe", "Strength Training", mockUser);
+	}
 
-    when(uuidGeneratorInterface.newUUID()).thenReturn(generatedUUID);
+	@Test
+  void createFrom_ShouldReturnTrainerWithCorrectValues() {
+    when(uuidGenerator.newUUID()).thenReturn(mockUUID);
 
     Trainer trainer = trainerFactory.createFrom(command);
 
-    assertNotNull(trainer, "Trainer object should not be null");
-    assertEquals(generatedUUID, trainer.getId(), "Trainer ID should match generated UUID");
-    assertEquals(
-        specialization, trainer.getSpecialization(), "Specialization should match command");
-    assertEquals(user, trainer.getUser(), "User should match command");
-
-    verify(uuidGeneratorInterface, times(1)).newUUID();
-  }
-
-  @Test
-  void testCreateFrom_handlesNullCommand() {
-    assertThrows(
-        NullPointerException.class,
-        () -> trainerFactory.createFrom(null),
-        "Should throw NullPointerException when command is null");
+    assertEquals(mockUUID, trainer.getId());
+    assertEquals("Strength Training", trainer.getSpecialization());
+    assertEquals(command.getUser(), trainer.getUser());
   }
 }

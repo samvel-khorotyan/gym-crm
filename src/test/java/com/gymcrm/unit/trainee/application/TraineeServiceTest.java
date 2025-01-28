@@ -3,224 +3,435 @@ package com.gymcrm.unit.trainee.application;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.gymcrm.trainee.adapter.input.web.mapper.TraineeUpdateMapper;
 import com.gymcrm.trainee.application.TraineeService;
+import com.gymcrm.trainee.application.exception.TraineeNotFoundException;
 import com.gymcrm.trainee.application.factory.TraineeFactory;
-import com.gymcrm.trainee.application.port.input.*;
+import com.gymcrm.trainee.application.port.input.ActivateDeactivateTraineeCommand;
+import com.gymcrm.trainee.application.port.input.CreateTraineeCommand;
+import com.gymcrm.trainee.application.port.input.UpdateTraineeCommand;
+import com.gymcrm.trainee.application.port.input.UpdateTraineeTrainersCommand;
 import com.gymcrm.trainee.application.port.output.LoadTraineePort;
 import com.gymcrm.trainee.application.port.output.UpdateTraineePort;
 import com.gymcrm.trainee.domain.Trainee;
+import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
 import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
 import com.gymcrm.trainer.domain.Trainer;
+import com.gymcrm.training.application.factory.TrainingFactory;
+import com.gymcrm.training.application.port.output.LoadTrainingPort;
 import com.gymcrm.training.application.port.output.UpdateTrainingPort;
 import com.gymcrm.training.domain.Training;
-import com.gymcrm.user.application.port.input.AuthenticationUseCase;
+import com.gymcrm.user.adapter.input.web.mapper.UserUpdateMapper;
+import com.gymcrm.user.application.port.input.CreateUserCommand;
+import com.gymcrm.user.application.port.input.UpdateUserCommand;
+import com.gymcrm.user.application.port.input.UserCreationUseCase;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
+import com.gymcrm.user.domain.UserType;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 
 @ExtendWith(MockitoExtension.class)
 class TraineeServiceTest {
-  @Mock private UpdateTraineePort updateTraineePort;
+	@Mock
+	private UpdateTraineePort updateTraineePort;
 
-  @Mock private LoadTraineePort loadTraineePort;
+	@Mock
+	private UserCreationUseCase userCreationUseCase;
 
-  @Mock private AuthenticationUseCase authenticationUseCase;
+	@Mock
+	private TraineeFactory traineeFactory;
 
-  @Mock private UpdateUserPort updateUserPort;
+	@Mock
+	private LoadTraineePort loadTraineePort;
 
-  @Mock private LoadTrainerPort loadTrainerPort;
+	@Mock
+	private UserUpdateMapper userUpdateMapper;
 
-  @Mock private UpdateTrainingPort updateTrainingPort;
+	@Mock
+	private TraineeUpdateMapper traineeUpdateMapper;
 
-  @Mock private TraineeFactory traineeFactory;
+	@Mock
+	private UpdateUserPort updateUserPort;
 
-  @InjectMocks private TraineeService traineeService;
+	@Mock
+	private LoadTrainerPort loadTrainerPort;
 
-  private UUID traineeId;
-  private Trainee trainee;
-  private User user;
+	@Mock
+	private LoadTrainingPort loadTrainingPort;
 
-  @BeforeEach
-  void setUp() {
-    traineeId = UUID.randomUUID();
-    user = new User();
-    user.setIsActive(false);
-    user.setPassword("oldPassword");
+	@Mock
+	private UpdateTrainingPort updateTrainingPort;
 
-    trainee = new Trainee();
-    trainee.setId(traineeId);
-    trainee.setUser(user);
+	@Mock
+	private TrainingFactory trainingFactory;
 
-    traineeService.setLoadTraineePort(loadTraineePort);
-  }
+	@InjectMocks
+	private TraineeService traineeService;
 
-  @Test
-  void create_ShouldSaveTrainee_WhenValidCommandProvided() {
-    CreateTraineeCommand command = new CreateTraineeCommand(LocalDate.now(), "Test Address", user);
-    Trainee createdTrainee = new Trainee();
-    when(traineeFactory.createFrom(command)).thenReturn(createdTrainee);
+	private User mockUser;
 
-    traineeService.create(command);
+	@BeforeEach
+	void setUp() {
+		mockUser = new User(UUID.randomUUID(), "John", "Doe", "john.doe", "password123", true, UserType.TRAINEE);
 
-    verify(updateTraineePort, times(1)).save(createdTrainee);
-  }
+		traineeService.setLoadTraineePort(loadTraineePort);
+	}
 
-  @Test
-  void loadAll_ShouldReturnListOfTrainees() {
-    List<Trainee> trainees = List.of(trainee, new Trainee());
-    when(loadTraineePort.findAll()).thenReturn(trainees);
+	@Test
+	void create_ShouldReturnTrainee_WhenCommandIsValid() {
+		MDC.put("transactionId", "12345");
+		CreateTraineeCommand command = new CreateTraineeCommand("John", "Doe", null, "123 Main St", null);
+		User mockUser = new User();
+		mockUser.setUsername("john.doe");
+		Trainee mockTrainee = new Trainee();
+		UUID traineeId = UUID.randomUUID();
+		mockTrainee.setId(traineeId);
+
+		when(userCreationUseCase.create(any(CreateUserCommand.class))).thenReturn(mockUser);
+		when(traineeFactory.createFrom(command)).thenReturn(mockTrainee);
+		when(updateTraineePort.save(mockTrainee)).thenReturn(mockTrainee);
+
+		Trainee result = traineeService.create(command);
+
+		assertNotNull(result);
+		assertEquals(traineeId, result.getId());
+		verify(userCreationUseCase, times(1)).create(any(CreateUserCommand.class));
+		verify(traineeFactory, times(1)).createFrom(command);
+		verify(updateTraineePort, times(1)).save(mockTrainee);
+	}
+
+	@Test
+	void create_ShouldThrowException_WhenUserCreationFails() {
+		MDC.put("transactionId", "12345");
+		CreateTraineeCommand command = new CreateTraineeCommand("John", "Doe", null, "123 Main St", null);
+
+		when(userCreationUseCase.create(any(CreateUserCommand.class)))
+		        .thenThrow(new RuntimeException("User creation failed"));
+
+		RuntimeException exception = assertThrows(RuntimeException.class, () -> traineeService.create(command));
+		assertEquals("User creation failed", exception.getMessage());
+		verify(userCreationUseCase, times(1)).create(any(CreateUserCommand.class));
+		verify(traineeFactory, never()).createFrom(command);
+		verify(updateTraineePort, never()).save(any());
+	}
+
+	@Test
+	void create_ShouldThrowException_WhenTraineeSaveFails() {
+		MDC.put("transactionId", "12345");
+		CreateTraineeCommand command = new CreateTraineeCommand("John", "Doe", null, "123 Main St", null);
+		User mockUser = new User();
+		mockUser.setUsername("john.doe");
+		Trainee mockTrainee = new Trainee();
+
+		when(userCreationUseCase.create(any(CreateUserCommand.class))).thenReturn(mockUser);
+		when(traineeFactory.createFrom(command)).thenReturn(mockTrainee);
+		when(updateTraineePort.save(mockTrainee)).thenThrow(new RuntimeException("Trainee save failed"));
+
+		RuntimeException exception = assertThrows(RuntimeException.class, () -> traineeService.create(command));
+		assertEquals("Trainee save failed", exception.getMessage());
+		verify(userCreationUseCase, times(1)).create(any(CreateUserCommand.class));
+		verify(traineeFactory, times(1)).createFrom(command);
+		verify(updateTraineePort, times(1)).save(mockTrainee);
+	}
+
+	@Test
+	void loadAll_ShouldReturnListOfTrainees_WhenTraineesExist() {
+		List<Trainee> mockTrainees = List.of(
+		        new Trainee(UUID.randomUUID(), LocalDate.now(), "Address 1",
+		                new User(UUID.randomUUID(), "John", "Doe", "john.doe", "password123", true, UserType.TRAINEE)),
+		        new Trainee(UUID.randomUUID(), LocalDate.now(), "Address 2",
+		                new User(UUID.randomUUID(), "John", "Doe", "john.doe", "password123", true, UserType.TRAINEE)));
+
+		when(loadTraineePort.findAll()).thenReturn(mockTrainees);
+
+		List<Trainee> result = traineeService.loadAll();
+
+		assertNotNull(result);
+		assertEquals(2, result.size());
+		verify(loadTraineePort, times(1)).findAll();
+	}
+
+	@Test
+	void loadAll_ShouldThrowRuntimeException_WhenFetchingFails() {
+		RuntimeException exception = new RuntimeException("Database error");
+		when(loadTraineePort.findAll()).thenThrow(exception);
+
+		RuntimeException thrown = assertThrows(RuntimeException.class, () -> traineeService.loadAll());
+		assertEquals("Failed to fetch all trainees", thrown.getMessage());
+		assertEquals(exception, thrown.getCause());
+		verify(loadTraineePort, times(1)).findAll();
+	}
+
+	@Test
+  void loadAll_ShouldReturnEmptyList_WhenNoTraineesExist() {
+    when(loadTraineePort.findAll()).thenReturn(List.of());
 
     List<Trainee> result = traineeService.loadAll();
 
-    assertEquals(2, result.size());
+    assertNotNull(result);
+    assertTrue(result.isEmpty());
     verify(loadTraineePort, times(1)).findAll();
   }
 
-  @Test
-  void loadById_ShouldReturnTrainee_WhenValidIdProvided() {
-    when(loadTraineePort.findById(traineeId)).thenReturn(trainee);
+	@Test
+	void loadByUsername_ShouldReturnTrainee_WhenTraineeExists() {
+		String username = "john.doe";
+		Trainee mockTrainee = new Trainee();
+		mockTrainee.setUser(new User(null, "John", "Doe", username, null, true, null));
 
-    Trainee result = traineeService.loadById(traineeId);
+		when(loadTraineePort.findByUsernameWithTrainers(username)).thenReturn(mockTrainee);
 
-    assertNotNull(result);
-    assertEquals(traineeId, result.getId());
-    verify(loadTraineePort, times(1)).findById(traineeId);
-  }
+		Trainee result = traineeService.loadByUsername(username);
 
-  @Test
-  void loadById_ShouldThrowIllegalArgumentException_WhenIdIsNull() {
-    IllegalArgumentException exception =
-        assertThrows(IllegalArgumentException.class, () -> traineeService.loadById(null));
-    assertEquals("ID cannot be null.", exception.getMessage());
-  }
+		assertNotNull(result);
+		assertEquals(username, result.getUser().getUsername());
+		verify(loadTraineePort, times(1)).findByUsernameWithTrainers(username);
+	}
 
-  @Test
-  void update_ShouldUpdateTrainee_WhenValidCommandProvided() {
-    UpdateTraineeCommand command =
-        new UpdateTraineeCommand(traineeId, LocalDate.of(1990, 5, 20), "New Address", null);
-    when(loadTraineePort.findById(traineeId)).thenReturn(trainee);
+	@Test
+	void loadByUsername_ShouldThrowTraineeNotFoundException_WhenTraineeDoesNotExist() {
+		String username = "unknown.user";
 
-    traineeService.update(command);
+		when(loadTraineePort.findByUsernameWithTrainers(username))
+		        .thenThrow(new TraineeNotFoundException("Trainee not found"));
 
-    assertEquals("New Address", trainee.getAddress());
-    assertEquals(LocalDate.of(1990, 5, 20), trainee.getDateOfBirth());
-    verify(updateTraineePort, times(1)).save(trainee);
-  }
+		TraineeNotFoundException exception = assertThrows(TraineeNotFoundException.class,
+		        () -> traineeService.loadByUsername(username));
+		assertEquals("Trainee not found", exception.getMessage());
+		verify(loadTraineePort, times(1)).findByUsernameWithTrainers(username);
+	}
 
-  @Test
-  void updatePassword_ShouldUpdatePassword_WhenValidCommandProvided() {
-    UpdateTraineePasswordCommand command =
-        new UpdateTraineePasswordCommand(traineeId, "username", "oldPassword", "newPassword");
-    when(loadTraineePort.findById(traineeId)).thenReturn(trainee);
-    when(authenticationUseCase.authenticateTrainee("username", "oldPassword")).thenReturn(true);
+	@Test
+	void loadByUsername_ShouldLogErrorAndThrowException_WhenUnexpectedErrorOccurs() {
+		String username = "john.doe";
+		RuntimeException unexpectedException = new RuntimeException("Unexpected error");
 
-    traineeService.updatePassword(command);
+		when(loadTraineePort.findByUsernameWithTrainers(username)).thenThrow(unexpectedException);
 
-    assertEquals("newPassword", user.getPassword());
-    verify(updateUserPort, times(1)).save(user);
-  }
+		RuntimeException exception = assertThrows(RuntimeException.class,
+		        () -> traineeService.loadByUsername(username));
+		assertEquals("Unexpected error", exception.getMessage());
+		verify(loadTraineePort, times(1)).findByUsernameWithTrainers(username);
+	}
 
-  @Test
-  void activate_ShouldActivateDeactivateTrainee_WhenValidIdProvided() {
-    when(loadTraineePort.findById(traineeId)).thenReturn(trainee);
+	@Test
+	void update_ShouldUpdateTraineeSuccessfully_WhenValidCommandIsGiven() {
+		UUID traineeId = UUID.randomUUID();
+		Trainee existingTrainee = new Trainee(traineeId, LocalDate.now(), "Old Address", null);
+		UpdateTraineeCommand command = new UpdateTraineeCommand(traineeId, "New First Name", "New Last Name",
+		        LocalDate.now(), "New Address", true);
 
-    traineeService.activateDeactivate(traineeId);
+		when(loadTraineePort.findByIdWithTrainers(traineeId)).thenReturn(existingTrainee);
+		when(updateTraineePort.save(existingTrainee)).thenReturn(existingTrainee);
 
-    assertTrue(user.getIsActive());
-    verify(updateUserPort, times(1)).save(user);
-  }
+		Trainee result = traineeService.update(command);
 
-  @Test
-  void deleteById_ShouldDeleteTrainee_WhenValidIdProvided() {
-    traineeService.deleteById(traineeId);
+		assertNotNull(result);
+		verify(loadTraineePort, times(1)).findByIdWithTrainers(traineeId);
+		verify(userUpdateMapper, times(1)).updateUserFromCommand(any(UpdateUserCommand.class),
+		        eq(existingTrainee.getUser()));
+		verify(traineeUpdateMapper, times(1)).updateTraineeFromCommand(eq(command), eq(existingTrainee));
+		verify(updateTraineePort, times(1)).save(existingTrainee);
+	}
 
-    verify(updateTraineePort, times(1)).deleteById(traineeId);
-  }
+	@Test
+	void update_ShouldThrowException_WhenTraineeNotFound() {
+		UUID traineeId = UUID.randomUUID();
+		UpdateTraineeCommand command = new UpdateTraineeCommand(traineeId, "New First Name", "New Last Name",
+		        LocalDate.now(), "New Address", true);
 
-  @Test
-  void deleteByUsername_ShouldDeleteTrainee_WhenValidUsernameProvided() {
-    traineeService.deleteByUsername("username");
+		when(loadTraineePort.findByIdWithTrainers(traineeId)).thenThrow(new RuntimeException("Trainee not found"));
 
-    verify(updateTraineePort, times(1)).deleteByUsername("username");
-  }
+		Exception exception = assertThrows(RuntimeException.class, () -> traineeService.update(command));
+		assertEquals("Trainee not found", exception.getMessage());
+		verify(loadTraineePort, times(1)).findByIdWithTrainers(traineeId);
+		verifyNoInteractions(userUpdateMapper, traineeUpdateMapper, updateTraineePort);
+	}
 
-  @Test
-  void updateTrainersOfTrainee_ShouldUpdateTrainers_WhenValidMappingProvided() {
-    Training training1 = new Training();
-    training1.setId(UUID.randomUUID());
-    training1.setTrainee(trainee);
+	@Test
+	void update_ShouldThrowException_WhenUnexpectedErrorOccurs() {
+		UUID traineeId = UUID.randomUUID();
+		Trainee existingTrainee = new Trainee(traineeId, LocalDate.now(), "Old Address", null);
+		UpdateTraineeCommand command = new UpdateTraineeCommand(traineeId, "New First Name", "New Last Name",
+		        LocalDate.now(), "New Address", true);
 
-    Training training2 = new Training();
-    training2.setId(UUID.randomUUID());
-    training2.setTrainee(trainee);
+		when(loadTraineePort.findByIdWithTrainers(traineeId)).thenReturn(existingTrainee);
+		doThrow(new RuntimeException("Unexpected error")).when(updateTraineePort).save(existingTrainee);
 
-    trainee.setTrainings(List.of(training1, training2));
+		Exception exception = assertThrows(RuntimeException.class, () -> traineeService.update(command));
+		assertEquals("Unexpected error", exception.getMessage());
+		verify(loadTraineePort, times(1)).findByIdWithTrainers(traineeId);
+		verify(updateTraineePort, times(1)).save(existingTrainee);
+	}
 
-    Trainer trainer1 = new Trainer();
-    trainer1.setId(UUID.randomUUID());
-    Trainer trainer2 = new Trainer();
-    trainer2.setId(UUID.randomUUID());
+	@Test
+	void activateDeactivate_ShouldActivateTrainee_WhenUsernameIsValid() {
+		String username = "john.doe";
+		User mockUser = new User(UUID.randomUUID(), "John", "Doe", username, "password", true, UserType.TRAINEE);
+		Trainee mockTrainee = new Trainee(UUID.randomUUID(), LocalDate.now(), "Address", mockUser);
+		mockUser.setTrainee(mockTrainee);
 
-    Map<UUID, UUID> trainerToTrainingMap =
-        Map.of(
-            training1.getId(), trainer1.getId(),
-            training2.getId(), trainer2.getId());
+		ActivateDeactivateTraineeCommand command = new ActivateDeactivateTraineeCommand(username, true);
 
-    when(loadTraineePort.findById(traineeId)).thenReturn(trainee);
-    when(loadTrainerPort.findById(trainer1.getId())).thenReturn(trainer1);
-    when(loadTrainerPort.findById(trainer2.getId())).thenReturn(trainer2);
+		when(loadTraineePort.findByUsername(username)).thenReturn(mockTrainee);
 
-    traineeService.updateTrainersOfTrainee(traineeId, trainerToTrainingMap);
+		traineeService.activateDeactivate(command);
 
-    assertEquals(trainer1, training1.getTrainer());
-    assertEquals(trainer2, training2.getTrainer());
-    verify(updateTrainingPort, times(2)).save(any(Training.class));
-  }
+		verify(loadTraineePort, times(1)).findByUsername(username);
+		verify(updateUserPort, times(1)).save(mockUser);
+	}
 
-  @Test
-  void updateTrainersOfTrainee_ShouldUpdateTrainerForTrainee_WhenValidCommandProvided() {
-    UUID trainingId = UUID.randomUUID();
-    UUID trainerId = UUID.randomUUID();
-    Trainer trainer = new Trainer(trainerId, "Specialization", new User());
-    Training training =
-        new Training(trainingId, "Training Name", trainee, trainer, null, LocalDate.now(), 60);
-    trainee.setTrainings(List.of(training));
+	@Test
+	void activateDeactivate_ShouldDeactivateTrainee_WhenUsernameIsValid() {
+		String username = "john.doe";
+		mockUser.setTrainee(new Trainee(UUID.randomUUID(), LocalDate.now(), "Address", mockUser));
+		ActivateDeactivateTraineeCommand command = new ActivateDeactivateTraineeCommand(username, false);
 
-    UpdateTraineeCommand command = new UpdateTraineeCommand(training);
+		when(loadTraineePort.findByUsername(username)).thenReturn(mockUser.getTrainee());
 
-    lenient().when(loadTrainerPort.findById(trainerId)).thenReturn(trainer);
+		traineeService.activateDeactivate(command);
 
-    traineeService.updateTrainersOfTrainee(command);
+		verify(loadTraineePort, times(1)).findByUsername(username);
+		verify(updateUserPort, times(1)).save(mockUser);
+	}
 
-    assertEquals(1, trainee.getTrainers().size());
-    assertEquals(trainer, trainee.getTrainers().get(0));
-    verify(updateTraineePort, times(1)).save(trainee);
-  }
+	@Test
+	void activateDeactivate_ShouldThrowTraineeNotFoundException_WhenTraineeDoesNotExist() {
+		String username = "nonexistent.username";
+		ActivateDeactivateTraineeCommand command = new ActivateDeactivateTraineeCommand(username, true);
 
-  @Test
-  void updateTrainersOfTrainee_ShouldHandleRuntimeException_WhenSaveFails() {
-    UUID trainingId = UUID.randomUUID();
-    UUID trainerId = UUID.randomUUID();
-    Trainer trainer = new Trainer(trainerId, "Specialization", new User());
-    Training training =
-        new Training(trainingId, "Training Name", trainee, trainer, null, LocalDate.now(), 60);
-    trainee.setTrainings(List.of(training));
+		when(loadTraineePort.findByUsername(username)).thenThrow(new TraineeNotFoundException("Trainee not found"));
 
-    UpdateTraineeCommand command = new UpdateTraineeCommand(training);
+		assertThrows(TraineeNotFoundException.class, () -> traineeService.activateDeactivate(command));
 
-    doThrow(new RuntimeException("Database error")).when(updateTraineePort).save(trainee);
+		verify(loadTraineePort, times(1)).findByUsername(username);
+		verifyNoInteractions(updateUserPort);
+	}
 
-    RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> traineeService.updateTrainersOfTrainee(command));
+	@Test
+	void activateDeactivate_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
+		String username = "john.doe";
+		ActivateDeactivateTraineeCommand command = new ActivateDeactivateTraineeCommand(username, true);
 
-    assertEquals("Failed to update trainee for training", exception.getMessage());
-    verify(updateTraineePort, times(1)).save(trainee);
-  }
+		when(loadTraineePort.findByUsername(username)).thenThrow(new RuntimeException("Database error"));
+
+		assertThrows(RuntimeException.class, () -> traineeService.activateDeactivate(command));
+
+		verify(loadTraineePort, times(1)).findByUsername(username);
+		verifyNoInteractions(updateUserPort);
+	}
+
+	@Test
+	void deleteByUsername_ShouldDeleteTrainee_WhenUsernameIsValid() {
+		String username = "john.doe";
+		doNothing().when(updateTraineePort).deleteByUsername(username);
+
+		traineeService.deleteByUsername(username);
+
+		verify(updateTraineePort, times(1)).deleteByUsername(username);
+	}
+
+	@Test
+	void deleteByUsername_ShouldThrowException_WhenUsernameNotFound() {
+		String username = "invalid.username";
+		doThrow(new TraineeNotFoundException("Trainee not found with username: " + username)).when(updateTraineePort)
+		        .deleteByUsername(username);
+
+		assertThrows(TraineeNotFoundException.class, () -> traineeService.deleteByUsername(username));
+
+		verify(updateTraineePort, times(1)).deleteByUsername(username);
+	}
+
+	@Test
+	void deleteByUsername_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
+		String username = "john.doe";
+		doThrow(new RuntimeException("Database error")).when(updateTraineePort).deleteByUsername(username);
+
+		assertThrows(RuntimeException.class, () -> traineeService.deleteByUsername(username));
+
+		verify(updateTraineePort, times(1)).deleteByUsername(username);
+	}
+
+	@Test
+	void updateTraineeTrainers_ShouldUpdateTrainee_WhenAllDataIsValid() {
+		String traineeUsername = "john.doe";
+		List<String> trainerUsernames = List.of("trainer1", "trainer2");
+
+		User traineeUser = new User(UUID.randomUUID(), "John", "Doe", traineeUsername, "password", true,
+		        UserType.TRAINEE);
+		User trainerUser1 = new User(UUID.randomUUID(), "Trainer", "One", "trainer1", "password", true,
+		        UserType.TRAINER);
+		User trainerUser2 = new User(UUID.randomUUID(), "Trainer", "Two", "trainer2", "password", true,
+		        UserType.TRAINER);
+
+		Trainer trainer1 = new Trainer(UUID.randomUUID(), "Fitness", trainerUser1);
+		Trainer trainer2 = new Trainer(UUID.randomUUID(), "Yoga", trainerUser2);
+
+		Trainee trainee = new Trainee(UUID.randomUUID(), LocalDate.of(1995, 1, 1), "123 Street", traineeUser);
+
+		Training training1 = new Training(UUID.randomUUID(), "Morning Training", trainee, trainer1, null,
+		        LocalDate.now(), 60);
+		Training training2 = new Training(UUID.randomUUID(), "Evening Training", trainee, trainer2, null,
+		        LocalDate.now().plusDays(1), 90);
+
+		List<Trainer> trainers = List.of(trainer1, trainer2);
+		List<Training> trainings = List.of(training1, training2);
+
+		when(loadTraineePort.findByUsername(traineeUsername)).thenReturn(trainee);
+		when(loadTrainerPort.findAllByUsernames(trainerUsernames)).thenReturn(trainers);
+		when(loadTrainingPort.findAllByTrainerUsernames(trainerUsernames)).thenReturn(trainings);
+		when(updateTraineePort.save(trainee)).thenReturn(trainee); // Mocking save method
+
+		UpdateTraineeTrainersCommand command = new UpdateTraineeTrainersCommand(traineeUsername, trainerUsernames);
+		Trainee updatedTrainee = traineeService.updateTraineeTrainers(command);
+
+		assertNotNull(updatedTrainee, "Updated trainee should not be null");
+		assertEquals(trainers, updatedTrainee.getTrainers());
+		assertSame(trainee, updatedTrainee, "The returned trainee should be the same as the saved one.");
+		verify(updateTrainingPort, times(1)).deleteByTraineeId(trainee.getId());
+		verify(updateTrainingPort, times(1)).saveAll(anyList());
+		verify(updateTraineePort, times(1)).save(trainee);
+	}
+
+	@Test
+	void updateTraineeTrainers_ShouldThrowException_WhenTraineeNotFound() {
+		String traineeUsername = "invalid.trainee";
+		List<String> trainerUsernames = List.of("trainer1", "trainer2");
+
+		when(loadTraineePort.findByUsername(traineeUsername))
+		        .thenThrow(new TraineeNotFoundException("Trainee not found"));
+
+		UpdateTraineeTrainersCommand command = new UpdateTraineeTrainersCommand(traineeUsername, trainerUsernames);
+
+		assertThrows(TraineeNotFoundException.class, () -> traineeService.updateTraineeTrainers(command));
+
+		verify(updateTrainingPort, never()).deleteByTraineeId(any());
+		verify(updateTraineePort, never()).save(any());
+	}
+
+	@Test
+	void updateTraineeTrainers_ShouldThrowException_WhenTrainersNotFound() {
+		String traineeUsername = "john.doe";
+		List<String> trainerUsernames = List.of("invalid.trainer1", "invalid.trainer2");
+
+		Trainee trainee = mock(Trainee.class);
+		when(loadTraineePort.findByUsername(traineeUsername)).thenReturn(trainee);
+		when(loadTrainerPort.findAllByUsernames(trainerUsernames)).thenReturn(List.of());
+
+		UpdateTraineeTrainersCommand command = new UpdateTraineeTrainersCommand(traineeUsername, trainerUsernames);
+
+		assertThrows(TrainerNotFoundException.class, () -> traineeService.updateTraineeTrainers(command));
+
+		verify(updateTrainingPort, never()).deleteByTraineeId(any());
+		verify(updateTraineePort, never()).save(any());
+	}
 }

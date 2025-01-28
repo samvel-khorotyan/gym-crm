@@ -5,7 +5,11 @@ import java.util.List;
 import java.util.UUID;
 
 public interface LoadTraineePort {
-  Trainee findById(UUID id);
+	Trainee findByIdWithTrainers(UUID id);
 
-  List<Trainee> findAll();
+	Trainee findByUsernameWithTrainers(String username);
+
+	Trainee findByUsername(String username);
+
+	List<Trainee> findAll();
 }

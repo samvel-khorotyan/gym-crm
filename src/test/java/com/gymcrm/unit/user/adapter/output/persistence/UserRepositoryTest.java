@@ -7,12 +7,8 @@ import com.gymcrm.user.adapter.output.persistence.UserPersistenceRepository;
 import com.gymcrm.user.adapter.output.persistence.UserRepository;
 import com.gymcrm.user.application.exception.UserNotFoundException;
 import com.gymcrm.user.domain.User;
-import com.gymcrm.user.domain.UserType;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,113 +17,90 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class UserRepositoryTest {
-  @Mock private UserPersistenceRepository repository;
+	@Mock
+	private UserPersistenceRepository userPersistenceRepository;
 
-  @InjectMocks private UserRepository userRepository;
+	@InjectMocks
+	private UserRepository userRepository;
 
-  private User user;
+	@Test
+	void save_ShouldSaveUser_WhenValidUserProvided() {
+		User user = new User();
+		when(userPersistenceRepository.save(user)).thenReturn(user);
 
-  @BeforeEach
-  void setUp() {
-    UUID userId = UUID.randomUUID();
-    user = new User(userId, "John", "Doe", "john-doe", "password123", true, UserType.TRAINEE);
-  }
+		User savedUser = userRepository.save(user);
 
-  @Test
-  void save_ShouldSaveUser() {
-    when(repository.save(user)).thenReturn(user);
+		assertEquals(user, savedUser);
+		verify(userPersistenceRepository, times(1)).save(user);
+	}
 
-    User savedUser = userRepository.save(user);
+	@Test
+	void findDistinctUsernamesStartingWith_ShouldReturnUsernames_WhenBaseUsernameProvided() {
+		String baseUsername = "john";
+		List<String> usernames = List.of("john_doe", "john_smith");
+		when(userPersistenceRepository.findDistinctUsernamesStartingWith(baseUsername)).thenReturn(usernames);
 
-    assertNotNull(savedUser);
-    assertEquals(user, savedUser);
-    verify(repository, times(1)).save(user);
-  }
+		List<String> result = userRepository.findDistinctUsernamesStartingWith(baseUsername);
 
-  @Test
-  void findDistinctUsernamesStartingWith_ShouldReturnListOfUsernames() {
-    String baseUsername = "john";
-    List<String> usernames = Arrays.asList("john-doe", "john-smith");
-    when(repository.findDistinctUsernamesStartingWith(baseUsername)).thenReturn(usernames);
+		assertEquals(usernames.size(), result.size());
+		assertTrue(result.contains("john_doe"));
+		assertTrue(result.contains("john_smith"));
+		verify(userPersistenceRepository, times(1)).findDistinctUsernamesStartingWith(baseUsername);
+	}
 
-    List<String> result = userRepository.findDistinctUsernamesStartingWith(baseUsername);
+	@Test
+	void findByUsername_ShouldReturnUser_WhenUsernameExists() {
+		String username = "john.doe";
+		User user = new User();
+		when(userPersistenceRepository.findByUsername(username)).thenReturn(Optional.of(user));
 
-    assertNotNull(result);
-    assertEquals(2, result.size());
-    assertTrue(result.contains("john-doe"));
-    verify(repository, times(1)).findDistinctUsernamesStartingWith(baseUsername);
-  }
+		User foundUser = userRepository.findByUsername(username);
 
-  @Test
-  void findByUsername_ShouldReturnUser_WhenUserExists() {
-    String username = "john-doe";
-    when(repository.findByUsername(username)).thenReturn(Optional.of(user));
+		assertEquals(user, foundUser);
+		verify(userPersistenceRepository, times(1)).findByUsername(username);
+	}
 
-    User foundUser = userRepository.findByUsername(username);
+	@Test
+	void findByUsername_ShouldThrowException_WhenUsernameNotFound() {
+		String username = "nonexistent";
+		when(userPersistenceRepository.findByUsername(username)).thenReturn(Optional.empty());
 
-    assertNotNull(foundUser);
-    assertEquals(user, foundUser);
-    verify(repository, times(1)).findByUsername(username);
-  }
+		assertThrows(UserNotFoundException.class, () -> userRepository.findByUsername(username));
+		verify(userPersistenceRepository, times(1)).findByUsername(username);
+	}
 
-  @Test
-  void findByUsername_ShouldThrowUserNotFoundException_WhenUserDoesNotExist() {
-    String username = "nonexistent";
-    when(repository.findByUsername(username)).thenReturn(Optional.empty());
+	@Test
+	void findAll_ShouldReturnAllUsers() {
+		List<User> users = List.of(new User(), new User());
+		when(userPersistenceRepository.findAll()).thenReturn(users);
 
-    assertThrows(UserNotFoundException.class, () -> userRepository.findByUsername(username));
-    verify(repository, times(1)).findByUsername(username);
-  }
+		List<User> result = userRepository.findAll();
 
-  @Test
-  void findAll_ShouldReturnListOfUsers() {
-    List<User> users =
-        Arrays.asList(
-            user,
-            new User(
-                UUID.randomUUID(),
-                "Jane",
-                "Doe",
-                "jane-doe",
-                "password123",
-                true,
-                UserType.TRAINER));
-    when(repository.findAll()).thenReturn(users);
+		assertEquals(users.size(), result.size());
+		verify(userPersistenceRepository, times(1)).findAll();
+	}
 
-    List<User> result = userRepository.findAll();
+	@Test
+	void userExistsByCredentials_ShouldReturnTrue_WhenUserExists() {
+		String username = "john.doe";
+		String password = "password123";
+		when(userPersistenceRepository.existsByUsernameAndPassword(username, password)).thenReturn(true);
 
-    assertNotNull(result);
-    assertEquals(2, result.size());
-    verify(repository, times(1)).findAll();
-  }
+		boolean exists = userRepository.userExistsByCredentials(username, password);
 
-  @Test
-  void userExistsByCredentials_ShouldReturnTrue_WhenUserExists() {
-    String username = "john-doe";
-    String password = "password123";
-    UserType userType = UserType.TRAINEE;
-    when(repository.existsByUsernameAndPasswordAndUserType(username, password, userType))
-        .thenReturn(true);
+		assertTrue(exists);
+		verify(userPersistenceRepository, times(1)).existsByUsernameAndPassword(username, password);
+	}
 
-    boolean exists = userRepository.userExistsByCredentials(username, password, userType);
+	@Test
+	void userExistsByCredentials_ShouldReturnFalse_WhenUserDoesNotExist() {
+		String username = "nonexistent";
+		String password = "password123";
+		when(userPersistenceRepository.existsByUsernameAndPassword(username, password)).thenReturn(false);
 
-    assertTrue(exists);
-    verify(repository, times(1))
-        .existsByUsernameAndPasswordAndUserType(username, password, userType);
-  }
+		boolean exists = userRepository.userExistsByCredentials(username, password);
 
-  @Test
-  void userExistsByCredentials_ShouldReturnFalse_WhenUserDoesNotExist() {
-    String username = "nonexistent";
-    String password = "wrong-password";
-    UserType userType = UserType.TRAINEE;
-    when(repository.existsByUsernameAndPasswordAndUserType(username, password, userType))
-        .thenReturn(false);
-
-    boolean exists = userRepository.userExistsByCredentials(username, password, userType);
-
-    assertFalse(exists);
-    verify(repository, times(1))
-        .existsByUsernameAndPasswordAndUserType(username, password, userType);
-  }
+		assertFalse(exists);
+		verify(userPersistenceRepository, times(1)).existsByUsernameAndPassword(username, password);
+	}
 }

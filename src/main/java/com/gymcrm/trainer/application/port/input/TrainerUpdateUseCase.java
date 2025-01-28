@@ -1,11 +1,9 @@
 package com.gymcrm.trainer.application.port.input;
 
-import java.util.UUID;
+import com.gymcrm.trainer.domain.Trainer;
 
 public interface TrainerUpdateUseCase {
-  void update(UpdateTrainerCommand command);
+	Trainer update(UpdateTrainerCommand command);
 
-  void updatePassword(UpdateTrainerPasswordCommand command);
-
-  boolean activateDeactivate(UUID trainerId);
+	void activateDeactivate(ActivateDeactivateTrainerCommand command);
 }
