@@ -1,22 +1,27 @@
 package com.gymcrm.util;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class UserUtil {
-  private static final Map<String, Integer> USERNAME_TRACKER = new ConcurrentHashMap<>();
+  public static String generateUniqueUsername(Set<String> usernames, String baseUsername) {
+    int count = 0;
+    String candidateUsername = baseUsername;
 
-  public static String generateUsername(String firstName, String lastName) {
+    while (usernames.contains(candidateUsername)) {
+      count++;
+      candidateUsername = baseUsername + count;
+    }
+
+    return candidateUsername;
+  }
+
+  public static String getBaseUsername(String firstName, String lastName) {
     validateName(firstName, "First name");
     validateName(lastName, "Last name");
 
-    String baseUsername = (firstName.trim() + "." + lastName.trim()).toLowerCase();
-    int count = USERNAME_TRACKER.getOrDefault(baseUsername, 0);
-    USERNAME_TRACKER.put(baseUsername, count + 1);
-
-    return count == 0 ? baseUsername : baseUsername + count;
+    return (firstName.trim() + "." + lastName.trim()).toLowerCase();
   }
 
   public static String generatePassword() {
