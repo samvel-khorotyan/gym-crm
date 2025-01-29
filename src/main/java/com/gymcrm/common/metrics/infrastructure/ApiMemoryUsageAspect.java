@@ -1,6 +1,6 @@
 package com.gymcrm.common.metrics.infrastructure;
 
-import com.gymcrm.common.metrics.application.ApiResponseTimeMetricService;
+import com.gymcrm.common.metrics.application.ApiMemoryUsageMetricService;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
-public class ApiResponseTimeAspect {
-	private final ApiResponseTimeMetricService apiResponseTimeMetricService;
+public class ApiMemoryUsageAspect {
+	private final ApiMemoryUsageMetricService apiMemoryUsageMetricService;
 
-	public ApiResponseTimeAspect(ApiResponseTimeMetricService apiResponseTimeMetricService) {
-		this.apiResponseTimeMetricService = apiResponseTimeMetricService;
+	public ApiMemoryUsageAspect(ApiMemoryUsageMetricService apiMemoryUsageMetricService) {
+		this.apiMemoryUsageMetricService = apiMemoryUsageMetricService;
 	}
 
 	@Around("@annotation(org.springframework.web.bind.annotation.GetMapping) || "
@@ -20,14 +20,14 @@ public class ApiResponseTimeAspect {
 	        + "@annotation(org.springframework.web.bind.annotation.PutMapping) || "
 	        + "@annotation(org.springframework.web.bind.annotation.PatchMapping) || "
 	        + "@annotation(org.springframework.web.bind.annotation.DeleteMapping)")
-	public Object measureResponseTime(ProceedingJoinPoint joinPoint) throws Throwable {
-		long start = System.currentTimeMillis();
+	public Object measureMemoryUsage(ProceedingJoinPoint joinPoint) throws Throwable {
+		long beforeMemory = apiMemoryUsageMetricService.getMemoryUsage();
 		try {
 			return joinPoint.proceed();
 		} finally {
-			long duration = System.currentTimeMillis() - start;
-			apiResponseTimeMetricService.recordResponseTime(duration);
-			System.out.println("Custom API response time recorded: " + duration + "ms");
+			long afterMemory = apiMemoryUsageMetricService.getMemoryUsage();
+			long memoryUsed = afterMemory - beforeMemory;
+			System.out.println("Custom API memory usage recorded: " + memoryUsed + " bytes");
 		}
 	}
 }

@@ -10,8 +10,9 @@ public class ApiResponseTimeMetricService {
 	private final Timer responseTimer;
 
 	public ApiResponseTimeMetricService(MeterRegistry meterRegistry) {
-		responseTimer = Timer.builder("api_response_time").description("API response time in milliseconds")
-		        .tag("endpoint", "generic").publishPercentileHistogram().register(meterRegistry);
+		responseTimer = Timer.builder("custom_api_response_time")
+		        .description("Custom API response time in milliseconds").tag("endpoint", "generic")
+		        .tag("source", "custom_metric").publishPercentileHistogram().register(meterRegistry);
 	}
 
 	public void recordResponseTime(long durationMillis) {
