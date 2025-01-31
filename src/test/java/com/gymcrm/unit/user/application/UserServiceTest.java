@@ -17,17 +17,14 @@ import com.gymcrm.user.domain.UserType;
 import com.gymcrm.util.UserUtil;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
-
 	@Mock
 	private UserFactory userFactory;
 
@@ -43,25 +40,14 @@ class UserServiceTest {
 	@InjectMocks
 	private UserService userService;
 
-	@BeforeEach
-	void setUp() {
-		// Any necessary setup before each test
-	}
-
 	@Test
 	void create_ShouldReturnUser_WhenValidCommandProvided() {
 		CreateUserCommand command = new CreateUserCommand("John", "Doe", UserType.TRAINER);
-		String generatedUsername = "john.doe";
-		String generatedPassword = "securePassword123";
+		String generatedUsername = UserUtil.getBaseUsername(command.getFirstName(), command.getLastName());
+		String generatedPassword = UserUtil.generatePassword();
+
 		User user = new User(UUID.randomUUID(), "John", "Doe", generatedUsername, generatedPassword, true,
 		        UserType.TRAINER);
-
-		MockedStatic<UserUtil> mockedUtil = mockStatic(UserUtil.class);
-		mockedUtil.when(() -> UserUtil.getBaseUsername(command.getFirstName(), command.getLastName()))
-		        .thenReturn(generatedUsername);
-		mockedUtil.when(() -> UserUtil.generateUniqueUsername(anySet(), eq(generatedUsername)))
-		        .thenReturn(generatedUsername);
-		mockedUtil.when(UserUtil::generatePassword).thenReturn(generatedPassword);
 
 		when(loadUserPort.findDistinctUsernamesStartingWith(generatedUsername)).thenReturn(List.of());
 		when(userFactory.createFrom(command)).thenReturn(user);
@@ -75,6 +61,7 @@ class UserServiceTest {
 		assertEquals(generatedUsername, result.getUsername());
 		assertEquals(generatedPassword, result.getPassword());
 		assertEquals(UserType.TRAINER, result.getUserType());
+
 		verify(updateUserPort, times(1)).save(user);
 	}
 
@@ -83,17 +70,17 @@ class UserServiceTest {
 		CreateUserCommand command = new CreateUserCommand(null, "Doe", UserType.TRAINER);
 
 		RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.create(command));
-		assertInstanceOf(IllegalArgumentException.class, exception.getCause());
+		assertTrue(exception.getCause() instanceof IllegalArgumentException);
 		assertEquals("First name and last name cannot be null or empty", exception.getCause().getMessage());
 		verifyNoInteractions(updateUserPort, userFactory);
 	}
 
 	@Test
 	void create_ShouldThrowException_WhenLastNameIsBlank() {
-		CreateUserCommand command = new CreateUserCommand("John", "   ", UserType.TRAINER);
+		CreateUserCommand command = new CreateUserCommand("John", " ", UserType.TRAINER);
 
 		RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.create(command));
-		assertInstanceOf(IllegalArgumentException.class, exception.getCause());
+		assertTrue(exception.getCause() instanceof IllegalArgumentException);
 		assertEquals("First name and last name cannot be null or empty", exception.getCause().getMessage());
 		verifyNoInteractions(updateUserPort, userFactory);
 	}

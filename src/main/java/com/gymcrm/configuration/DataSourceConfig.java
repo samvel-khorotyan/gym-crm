@@ -1,12 +1,11 @@
 package com.gymcrm.configuration;
 
 import com.gymcrm.common.ApplicationProperties;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
-import org.flywaydb.core.Flyway;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
 public class DataSourceConfig {
@@ -17,23 +16,34 @@ public class DataSourceConfig {
 	}
 
 	@Bean
-	public DataSource dataSource() {
-		HikariConfig config = new HikariConfig();
-		config.setDriverClassName(applicationProperties.getDriverClassName());
-		config.setJdbcUrl(applicationProperties.getJdbcUrl());
-		config.setUsername(applicationProperties.getUsername());
-		config.setPassword(applicationProperties.getPassword());
-		config.setMaximumPoolSize(applicationProperties.getMaximumPoolSize());
-		config.setMinimumIdle(applicationProperties.getMinimumIdle());
-		config.setIdleTimeout(applicationProperties.getIdleTimeout());
-		config.setConnectionTimeout(applicationProperties.getConnectionTimeout());
-
-		return new HikariDataSource(config);
+	@Profile("local")
+	public DataSource localDataSource() {
+		return DataSourceBuilder.create().url(applicationProperties.getJdbcUrl())
+		        .username(applicationProperties.getUsername()).password(applicationProperties.getPassword())
+		        .driverClassName(applicationProperties.getDriverClassName()).build();
 	}
 
-	@Bean(initMethod = "migrate")
-	public Flyway flyway(DataSource dataSource) {
-		return Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").baselineOnMigrate(true)
-		        .baselineVersion("0").load();
+	@Bean
+	@Profile("dev")
+	public DataSource devDataSource() {
+		return DataSourceBuilder.create().url(applicationProperties.getJdbcUrl())
+		        .username(applicationProperties.getUsername()).password(applicationProperties.getPassword())
+		        .driverClassName(applicationProperties.getDriverClassName()).build();
+	}
+
+	@Bean
+	@Profile("stg")
+	public DataSource stgDataSource() {
+		return DataSourceBuilder.create().url(applicationProperties.getJdbcUrl())
+		        .username(applicationProperties.getUsername()).password(applicationProperties.getPassword())
+		        .driverClassName(applicationProperties.getDriverClassName()).build();
+	}
+
+	@Bean
+	@Profile("prod")
+	public DataSource prodDataSource() {
+		return DataSourceBuilder.create().url(applicationProperties.getJdbcUrl())
+		        .username(applicationProperties.getUsername()).password(applicationProperties.getPassword())
+		        .driverClassName(applicationProperties.getDriverClassName()).build();
 	}
 }

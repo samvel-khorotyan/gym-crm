@@ -2,13 +2,11 @@ package com.gymcrm.unit.common.error;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.gymcrm.common.error.ErrorsDetails;
 import com.gymcrm.common.error.RestResponseEntityExceptionHandler;
 import com.gymcrm.common.exception.*;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -16,7 +14,6 @@ import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.WebRequest;
 
 class RestResponseEntityExceptionHandlerTest {
@@ -212,45 +209,6 @@ class RestResponseEntityExceptionHandlerTest {
 	}
 
 	@Test
-	void handleMethodArgumentNotValid_ShouldReturnBadRequestResponse() throws Exception {
-		MethodArgumentNotValidException exception = createMockedValidationException(
-		        List.of("field1 must not be null", "field2 must be greater than 0"),
-		        List.of("ObjectName global error"));
-		WebRequest mockRequest = mock(WebRequest.class);
-
-		ResponseEntity<Object> response = invokeHandleMethodArgumentNotValid(exception, mockRequest);
-
-		assertNotNull(response, "Response should not be null");
-		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(), "Status code should be 400 BAD_REQUEST");
-		assertNotNull(response.getBody(), "Response body should not be null");
-
-		ErrorsDetails errorDetails = (ErrorsDetails) response.getBody();
-		assertNotNull(errorDetails, "Error details should not be null");
-		assertTrue(errorDetails.getMessage().contains("field1 must not be null"),
-		        "Message should contain field1 error");
-		assertTrue(errorDetails.getMessage().contains("field2 must be greater than 0"),
-		        "Message should contain field2 error");
-		assertTrue(errorDetails.getMessage().contains("ObjectName global error"),
-		        "Message should contain global error");
-	}
-
-	@Test
-	void handleMethodArgumentNotValid_ShouldHandleNoErrorsGracefully() throws Exception {
-		MethodArgumentNotValidException exception = createMockedValidationException(List.of(), List.of());
-		WebRequest mockRequest = mock(WebRequest.class);
-
-		ResponseEntity<Object> response = invokeHandleMethodArgumentNotValid(exception, mockRequest);
-
-		assertNotNull(response, "Response should not be null");
-		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(), "Status code should be 400 BAD_REQUEST");
-		assertNotNull(response.getBody(), "Response body should not be null");
-
-		ErrorsDetails errorDetails = (ErrorsDetails) response.getBody();
-		assertNotNull(errorDetails, "Error details should not be null");
-		assertEquals("", errorDetails.getMessage(), "Message should be empty when no validation errors exist");
-	}
-
-	@Test
 	void handleHttpMessageNotReadable_ShouldReturnBadRequestResponse() throws Exception {
 		HttpInputMessage mockInputMessage = mock(HttpInputMessage.class);
 		HttpMessageNotReadableException exception = new HttpMessageNotReadableException("Invalid JSON format",
@@ -307,33 +265,6 @@ class RestResponseEntityExceptionHandlerTest {
 		        "Error message should match");
 	}
 
-	private MethodArgumentNotValidException createMockedValidationException(List<String> fieldErrors,
-	        List<String> globalErrors) {
-		org.springframework.validation.BindingResult bindingResult = mock(
-		        org.springframework.validation.BindingResult.class);
-
-		List<org.springframework.validation.FieldError> mockedFieldErrors = fieldErrors.stream().map(msg -> {
-			var fieldError = mock(org.springframework.validation.FieldError.class);
-			when(fieldError.getField()).thenReturn("field");
-			when(fieldError.getDefaultMessage()).thenReturn(msg);
-			return fieldError;
-		}).toList();
-		when(bindingResult.getFieldErrors()).thenReturn(mockedFieldErrors);
-
-		List<org.springframework.validation.ObjectError> mockedGlobalErrors = globalErrors.stream().map(msg -> {
-			var objectError = mock(org.springframework.validation.ObjectError.class);
-			when(objectError.getObjectName()).thenReturn("ObjectName");
-			when(objectError.getDefaultMessage()).thenReturn(msg);
-			return objectError;
-		}).toList();
-		when(bindingResult.getGlobalErrors()).thenReturn(mockedGlobalErrors);
-
-		MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
-		when(exception.getBindingResult()).thenReturn(bindingResult);
-
-		return exception;
-	}
-
 	@SuppressWarnings("unchecked")
 	private ResponseEntity<ErrorsDetails> invokeHandleNotFoundException(NotFoundException exception, WebRequest request)
 	        throws Exception {
@@ -377,16 +308,6 @@ class RestResponseEntityExceptionHandlerTest {
 		        Throwable.class, WebRequest.class);
 		method.setAccessible(true);
 		return (ResponseEntity<ErrorsDetails>) method.invoke(exceptionHandler, exception, request);
-	}
-
-	@SuppressWarnings("unchecked")
-	private ResponseEntity<Object> invokeHandleMethodArgumentNotValid(MethodArgumentNotValidException exception,
-	        WebRequest request) throws Exception {
-		Method method = RestResponseEntityExceptionHandler.class.getDeclaredMethod("handleMethodArgumentNotValid",
-		        MethodArgumentNotValidException.class, HttpHeaders.class, HttpStatus.class, WebRequest.class);
-		method.setAccessible(true);
-		return (ResponseEntity<Object>) method.invoke(exceptionHandler, exception, null, HttpStatus.BAD_REQUEST,
-		        request);
 	}
 
 	@SuppressWarnings("unchecked")

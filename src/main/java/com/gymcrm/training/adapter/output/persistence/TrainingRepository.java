@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import javax.persistence.criteria.Predicate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Repository;
 public class TrainingRepository implements UpdateTrainingPort, LoadTrainingPort {
 	private final TrainingPersistenceRepository repository;
 
-	@Autowired
 	public TrainingRepository(TrainingPersistenceRepository repository) {
 		this.repository = repository;
 	}

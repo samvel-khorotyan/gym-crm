@@ -6,14 +6,12 @@ import com.gymcrm.user.application.port.output.LoadUserPort;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class UserRepository implements UpdateUserPort, LoadUserPort, AuthenticationPort {
 	private final UserPersistenceRepository repository;
 
-	@Autowired
 	public UserRepository(UserPersistenceRepository repository) {
 		this.repository = repository;
 	}

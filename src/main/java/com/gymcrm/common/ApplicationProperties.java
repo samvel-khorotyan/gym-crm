@@ -18,16 +18,4 @@ public class ApplicationProperties {
 
 	@Value("${spring.datasource.password}")
 	private String password;
-
-	@Value("${spring.datasource.hikari.maximum-pool-size}")
-	private int maximumPoolSize;
-
-	@Value("${spring.datasource.hikari.minimum-idle}")
-	private int minimumIdle;
-
-	@Value("${spring.datasource.hikari.idle-timeout}")
-	private int idleTimeout;
-
-	@Value("${spring.datasource.hikari.connection-timeout}")
-	private int connectionTimeout;
 }
