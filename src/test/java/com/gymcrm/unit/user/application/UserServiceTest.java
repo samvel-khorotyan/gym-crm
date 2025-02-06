@@ -6,7 +6,6 @@ import static org.mockito.Mockito.*;
 import com.gymcrm.user.application.UserService;
 import com.gymcrm.user.application.exception.UserNotFoundException;
 import com.gymcrm.user.application.factory.UserFactory;
-import com.gymcrm.user.application.port.input.AuthenticationUseCase;
 import com.gymcrm.user.application.port.input.CreateUserCommand;
 import com.gymcrm.user.application.port.output.LoadUserPort;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
@@ -32,9 +31,6 @@ class UserServiceTest {
 
 	@Mock
 	private LoadUserPort loadUserPort;
-
-	@Mock
-	private AuthenticationUseCase authenticationUseCase;
 
 	@Mock
 	private PasswordEncoder passwordEncoder;
