@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -33,7 +34,7 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
 		return new ResponseEntity<>(errorDetails, HttpStatus.UNAUTHORIZED);
 	}
 
-	@ExceptionHandler(ForbiddenException.class)
+	@ExceptionHandler({ForbiddenException.class, AccessDeniedException.class})
 	protected ResponseEntity<ErrorsDetails> handleForbiddenException(Throwable ex, WebRequest request) {
 		ErrorsDetails errorDetails = new ErrorsDetails(ex.getMessage());
 		return new ResponseEntity<>(errorDetails, HttpStatus.FORBIDDEN);

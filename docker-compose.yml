@@ -44,6 +44,12 @@ services:
       - ./db/migration/dev:/flyway/sql
     command: -connectRetries=10 migrate
 
+  cache:
+    image: redis
+    container_name: engine-api-redis
+    ports:
+      - 6379:6379
+
 networks:
   default:
     name: springboot_network

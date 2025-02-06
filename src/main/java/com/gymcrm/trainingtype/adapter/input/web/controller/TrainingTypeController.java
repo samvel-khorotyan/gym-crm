@@ -1,7 +1,5 @@
 package com.gymcrm.trainingtype.adapter.input.web.controller;
 
-import com.gymcrm.configuration.security.Authenticated;
-import com.gymcrm.configuration.security.RequiresPermission;
 import com.gymcrm.trainingtype.adapter.input.web.response.TrainingTypeResponse;
 import com.gymcrm.trainingtype.application.port.input.LoadTrainingTypeUseCase;
 import com.gymcrm.trainingtype.domain.TrainingType;
@@ -28,13 +26,8 @@ public class TrainingTypeController {
 	}
 
 	@GetMapping("/users/me/training-types")
-	@Authenticated
-	@RequiresPermission({"VIEW_TRAINING_TYPES"})
 	@ResponseStatus(HttpStatus.OK)
 	@ApiOperation(value = "Retrieve all training types",notes = "Returns a list of all available training types.")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Successfully retrieved training types."),
 	        @ApiResponse(code = 401,message = "Unauthorized access."),
 	        @ApiResponse(code = 403,message = "Forbidden. You do not have permission to view training types.")})

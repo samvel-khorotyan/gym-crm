@@ -1,6 +1,8 @@
 package com.gymcrm.trainee.adapter.input.web.response;
 
 import com.gymcrm.trainee.domain.Trainee;
+import com.gymcrm.util.PasswordStorage;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,6 +16,9 @@ public class TraineeLightResponse extends RepresentationModel<TraineeLightRespon
 	private String password;
 
 	public static TraineeLightResponse from(Trainee trainee) {
-		return new TraineeLightResponse(trainee.getUser().getUsername(), trainee.getUser().getPassword());
+		UUID userId = trainee.getUser().getId();
+		String password = PasswordStorage.getPassword(userId);
+		PasswordStorage.removePassword(userId);
+		return new TraineeLightResponse(trainee.getUser().getUsername(), password);
 	}
 }

@@ -1,7 +1,5 @@
 package com.gymcrm.training.adapter.input.web.controller;
 
-import com.gymcrm.configuration.security.Authenticated;
-import com.gymcrm.configuration.security.RequiresPermission;
 import com.gymcrm.training.adapter.input.web.request.TrainingCreateRequest;
 import com.gymcrm.training.application.port.input.TrainingCreationUseCase;
 import io.swagger.annotations.*;
@@ -11,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -27,14 +26,10 @@ public class TrainingController {
 		this.trainingCreationUseCase = trainingCreationUseCase;
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/users/me/trainings")
-	@Authenticated
-	@RequiresPermission({"CREATE_TRAINING"})
 	@ResponseStatus(HttpStatus.CREATED)
 	@ApiOperation(value = "Create a new training",notes = "Creates a new training session based on the provided details.")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 201,message = "Training created successfully."),
 	        @ApiResponse(code = 400,message = "Invalid input data provided.")})
 	public void create(

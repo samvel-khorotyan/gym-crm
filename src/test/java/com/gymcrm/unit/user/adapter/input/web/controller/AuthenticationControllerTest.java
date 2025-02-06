@@ -4,7 +4,7 @@ import static org.mockito.Mockito.doNothing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymcrm.user.adapter.input.web.controller.AuthenticationController;
-import com.gymcrm.user.application.port.input.AuthenticationUseCase;
+import com.gymcrm.user.application.port.input.BlacklistTokenUseCase;
 import com.gymcrm.user.application.port.input.UpdatePasswordCommand;
 import com.gymcrm.user.application.port.input.UserUpdateUseCase;
 import java.util.HashMap;
@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class AuthenticationControllerTest {
 	private MockMvc mockMvc;
 
-	private AuthenticationUseCase authenticationUseCase;
+	private BlacklistTokenUseCase blacklistTokenUseCase;
 	private UserUpdateUseCase userUpdateUseCase;
 
 	private ObjectMapper objectMapper;
@@ -32,11 +32,11 @@ class AuthenticationControllerTest {
 
 	@BeforeEach
 	public void setup() {
-		authenticationUseCase = Mockito.mock(AuthenticationUseCase.class);
+		blacklistTokenUseCase = Mockito.mock(BlacklistTokenUseCase.class);
 		userUpdateUseCase = Mockito.mock(UserUpdateUseCase.class);
 
-		AuthenticationController authenticationController = new AuthenticationController(authenticationUseCase,
-		        userUpdateUseCase);
+		AuthenticationController authenticationController = new AuthenticationController(userUpdateUseCase,
+		        blacklistTokenUseCase);
 
 		mockMvc = MockMvcBuilders.standaloneSetup(authenticationController).build();
 
@@ -48,20 +48,11 @@ class AuthenticationControllerTest {
 	}
 
 	@Test
-	public void testLoginEndpoint_ShouldReturnOk() throws Exception {
-		doNothing().when(authenticationUseCase).authenticate(username, oldPassword);
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/users/me/login").header("username", username)
-		        .header("password", oldPassword).contentType(MediaType.APPLICATION_JSON))
-		        .andExpect(MockMvcResultMatchers.status().isOk());
-	}
-
-	@Test
 	public void updateLoginDetails_ShouldReturnBadRequest_WhenUsernameIsEmpty() throws Exception {
 		Map<String, Object> traineeRequest = loginUpdateRequest();
 		traineeRequest.put("username", "");
 
-		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/authentication").contentType(MediaType.APPLICATION_JSON)
 		        .content(objectMapper.writeValueAsString(traineeRequest)))
 		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
 	}
@@ -70,9 +61,9 @@ class AuthenticationControllerTest {
 	public void updateLoginDetails_ShouldReturnBadRequest_WhenUsernameIsTooLong() throws Exception {
 		Map<String, Object> traineeRequest = loginUpdateRequest();
 		traineeRequest.put("username",
-		        "This is a sample test description that serves as input data for verifying the functionality of the trainee creation endpoint. It includes details to check proper response handling for valid requests in a realistic scenario.");
+		        "This is a sample test description that serves as input data for verifying the functionality of the trainee creation endpoint.It includes details to check proper response handling for valid requests in a realistic scenario.");
 
-		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/authentication").contentType(MediaType.APPLICATION_JSON)
 		        .content(objectMapper.writeValueAsString(traineeRequest)))
 		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
 	}
@@ -82,7 +73,7 @@ class AuthenticationControllerTest {
 		Map<String, Object> traineeRequest = loginUpdateRequest();
 		traineeRequest.put("old_password", "");
 
-		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/authentication").contentType(MediaType.APPLICATION_JSON)
 		        .content(objectMapper.writeValueAsString(traineeRequest)))
 		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
 	}
@@ -91,9 +82,9 @@ class AuthenticationControllerTest {
 	public void updateLoginDetails_ShouldReturnBadRequest_WhenOldPasswordExceedsMaxLength() throws Exception {
 		Map<String, Object> traineeRequest = loginUpdateRequest();
 		traineeRequest.put("old_password",
-		        "This is a sample test description that serves as input data for verifying the functionality of the trainee creation endpoint. It includes details to check proper response handling for valid requests in a realistic scenario.");
+		        "This is a sample test description that serves as input data for verifying the functionality of the trainee creation endpoint.It includes details to check proper response handling for valid requests in a realistic scenario.");
 
-		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/authentication").contentType(MediaType.APPLICATION_JSON)
 		        .content(objectMapper.writeValueAsString(traineeRequest)))
 		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
 	}
@@ -103,7 +94,7 @@ class AuthenticationControllerTest {
 		Map<String, Object> traineeRequest = loginUpdateRequest();
 		traineeRequest.put("new_password", "");
 
-		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/authentication").contentType(MediaType.APPLICATION_JSON)
 		        .content(objectMapper.writeValueAsString(traineeRequest)))
 		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
 	}
@@ -112,9 +103,9 @@ class AuthenticationControllerTest {
 	public void updateLoginDetails_ShouldReturnBadRequest_WhenNewPasswordExceedsMaxLength() throws Exception {
 		Map<String, Object> traineeRequest = loginUpdateRequest();
 		traineeRequest.put("new_password",
-		        "This is a sample test description that serves as input data for verifying the functionality of the trainee creation endpoint. It includes details to check proper response handling for valid requests in a realistic scenario.");
+		        "This is a sample test description that serves as input data for verifying the functionality of the trainee creation endpoint.It includes details to check proper response handling for valid requests in a realistic scenario.");
 
-		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/authentication").contentType(MediaType.APPLICATION_JSON)
 		        .content(objectMapper.writeValueAsString(traineeRequest)))
 		        .andExpect(MockMvcResultMatchers.status().isBadRequest());
 	}
@@ -123,9 +114,20 @@ class AuthenticationControllerTest {
 	public void updatePassword_ShouldReturnOk_WhenRequestIsValid() throws Exception {
 		doNothing().when(userUpdateUseCase).updatePassword(getUpdatePasswordCommand());
 
-		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/login").contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(MockMvcRequestBuilders.put("/users/me/authentication").contentType(MediaType.APPLICATION_JSON)
 		        .content(objectMapper.findAndRegisterModules().writeValueAsString(loginUpdateRequest())))
 		        .andExpect(MockMvcResultMatchers.status().isOk());
+	}
+
+	@Test
+	public void logout_ShouldReturnOk() throws Exception {
+		String token = "some-token";
+
+		doNothing().when(blacklistTokenUseCase).blacklistToken(token, 60 * 60 * 1000);
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/users/me/logout").header("Authorization", "Bearer " + token)
+		        .contentType(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isOk())
+		        .andExpect(MockMvcResultMatchers.content().string("Logged out successfully."));
 	}
 
 	private UpdatePasswordCommand getUpdatePasswordCommand() {
