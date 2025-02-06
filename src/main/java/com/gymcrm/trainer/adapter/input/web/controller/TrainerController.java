@@ -1,7 +1,5 @@
 package com.gymcrm.trainer.adapter.input.web.controller;
 
-import com.gymcrm.configuration.security.Authenticated;
-import com.gymcrm.configuration.security.RequiresPermission;
 import com.gymcrm.trainee.adapter.input.web.response.TraineeTrainingsResponse;
 import com.gymcrm.trainer.adapter.input.web.request.TrainerActivateDeactivateRequest;
 import com.gymcrm.trainer.adapter.input.web.request.TrainerCreateRequest;
@@ -28,6 +26,7 @@ import org.springframework.hateoas.RepresentationModel;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -76,13 +75,8 @@ public class TrainerController {
 	}
 
 	@GetMapping("/users/me/trainers")
-	@Authenticated
-	@RequiresPermission({"VIEW_TRAINERS"})
 	@ResponseStatus(HttpStatus.OK)
 	@ApiOperation(value = "Get Trainer",notes = "Fetches trainer details by username")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Trainer details fetched"),
 	        @ApiResponse(code = 404,message = "Trainer not found"),
 	        @ApiResponse(code = 401,message = "Unauthorized access")})
@@ -108,14 +102,10 @@ public class TrainerController {
 		return response;
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	@PutMapping("/users/me/trainers/{traineeId}")
-	@Authenticated
-	@RequiresPermission({"UPDATE_TRAINERS"})
 	@ResponseStatus(HttpStatus.OK)
 	@ApiOperation(value = "Update Trainer",notes = "Updates an existing Trainer's details")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Trainer updated successfully"),
 	        @ApiResponse(code = 400,message = "Invalid data provided"),
 	        @ApiResponse(code = 404,message = "Trainer not found")})
@@ -141,12 +131,7 @@ public class TrainerController {
 	}
 
 	@GetMapping("/users/me/trainers/unassigned")
-	@Authenticated
-	@RequiresPermission({"VIEW_TRAINERS_NOT_ASSIGNED_TO_TRAINEE"})
 	@ApiOperation(value = "Get trainers not assigned to any trainee",notes = "Returns a list of trainers that are not assigned to a specific trainee.")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataTypeClass = String.class),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataTypeClass = String.class)})
 	@ApiResponses({@ApiResponse(code = 200,message = "Successfully retrieved trainers."),
 	        @ApiResponse(code = 404,message = "Trainer not found."),
 	        @ApiResponse(code = 401,message = "Unauthorized access.")})
@@ -171,13 +156,8 @@ public class TrainerController {
 	}
 
 	@GetMapping("/users/me/trainers/trainings")
-	@Authenticated
-	@RequiresPermission({"VIEW_TRAINER_TRAININGS"})
 	@ResponseStatus(HttpStatus.OK)
 	@ApiOperation(value = "Retrieve trainer trainings",notes = "Returns a list of trainings for a specific trainer based on the provided criteria.")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Successfully retrieved trainer trainings."),
 	        @ApiResponse(code = 404,message = "Trainer or trainings not found."),
 	        @ApiResponse(code = 401,message = "Unauthorized access."),
@@ -209,13 +189,9 @@ public class TrainerController {
 		return responses;
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	@PatchMapping("/users/me/trainers/state")
-	@Authenticated
-	@RequiresPermission({"UPDATE_TRAINER_STATE"})
 	@ApiOperation(value = "Update trainer state",notes = "Allows updating specific state properties of a trainer, such as active status or custom states.")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Trainer state updated successfully."),
 	        @ApiResponse(code = 400,message = "Invalid request data."),
 	        @ApiResponse(code = 404,message = "Trainer not found."),

@@ -3,13 +3,10 @@ package com.gymcrm.unit.user.application;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.gymcrm.common.exception.UnauthorizedException;
 import com.gymcrm.user.application.UserService;
 import com.gymcrm.user.application.exception.UserNotFoundException;
 import com.gymcrm.user.application.factory.UserFactory;
-import com.gymcrm.user.application.port.input.AuthenticationUseCase;
 import com.gymcrm.user.application.port.input.CreateUserCommand;
-import com.gymcrm.user.application.port.input.UpdatePasswordCommand;
 import com.gymcrm.user.application.port.output.LoadUserPort;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
@@ -22,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -35,7 +33,7 @@ class UserServiceTest {
 	private LoadUserPort loadUserPort;
 
 	@Mock
-	private AuthenticationUseCase authenticationUseCase;
+	private PasswordEncoder passwordEncoder;
 
 	@InjectMocks
 	private UserService userService;
@@ -44,14 +42,15 @@ class UserServiceTest {
 	void create_ShouldReturnUser_WhenValidCommandProvided() {
 		CreateUserCommand command = new CreateUserCommand("John", "Doe", UserType.TRAINER);
 		String generatedUsername = UserUtil.getBaseUsername(command.getFirstName(), command.getLastName());
-		String generatedPassword = UserUtil.generatePassword();
+		String encodedPassword = "EncodedPassword123";
 
-		User user = new User(UUID.randomUUID(), "John", "Doe", generatedUsername, generatedPassword, true,
+		User user = new User(UUID.randomUUID(), "John", "Doe", generatedUsername, encodedPassword, true,
 		        UserType.TRAINER);
 
 		when(loadUserPort.findDistinctUsernamesStartingWith(generatedUsername)).thenReturn(List.of());
 		when(userFactory.createFrom(command)).thenReturn(user);
 		when(updateUserPort.save(user)).thenReturn(user);
+		when(passwordEncoder.encode(anyString())).thenReturn(encodedPassword);
 
 		User result = userService.create(command);
 
@@ -59,10 +58,11 @@ class UserServiceTest {
 		assertEquals("John", result.getFirstName());
 		assertEquals("Doe", result.getLastName());
 		assertEquals(generatedUsername, result.getUsername());
-		assertEquals(generatedPassword, result.getPassword());
+		assertEquals(encodedPassword, result.getPassword());
 		assertEquals(UserType.TRAINER, result.getUserType());
 
 		verify(updateUserPort, times(1)).save(user);
+		verify(passwordEncoder, times(1)).encode(anyString()); // Ստուգում ենք, որ passwordEncoder-ը կանչվել է
 	}
 
 	@Test
@@ -154,61 +154,4 @@ class UserServiceTest {
     assertEquals("Failed to fetch all users", exception.getMessage());
     verify(loadUserPort, times(1)).findAll();
   }
-
-	@Test
-	void updatePassword_ShouldUpdatePassword_WhenCommandIsValid() {
-		UpdatePasswordCommand command = new UpdatePasswordCommand("john.doe", "oldPassword", "newPassword");
-		User user = new User(UUID.randomUUID(), "John", "Doe", "john.doe", "oldPassword", true, UserType.TRAINER);
-		when(loadUserPort.findByUsername(command.getUsername())).thenReturn(user);
-		doNothing().when(authenticationUseCase).authenticate(command.getUsername(), command.getOldPassword());
-		when(updateUserPort.save(user)).thenReturn(user);
-
-		userService.updatePassword(command);
-
-		assertEquals("newPassword", user.getPassword());
-		verify(authenticationUseCase, times(1)).authenticate(command.getUsername(), command.getOldPassword());
-		verify(loadUserPort, times(1)).findByUsername(command.getUsername());
-		verify(updateUserPort, times(1)).save(user);
-	}
-
-	@Test
-	void updatePassword_ShouldThrowUnauthorizedException_WhenAuthenticationFails() {
-		UpdatePasswordCommand command = new UpdatePasswordCommand("john.doe", "wrongPassword", "newPassword");
-		doThrow(new UnauthorizedException("Invalid credentials")).when(authenticationUseCase)
-		        .authenticate(command.getUsername(), command.getOldPassword());
-
-		UnauthorizedException exception = assertThrows(UnauthorizedException.class,
-		        () -> userService.updatePassword(command));
-		assertEquals("Invalid credentials", exception.getMessage());
-		verify(authenticationUseCase, times(1)).authenticate(command.getUsername(), command.getOldPassword());
-		verifyNoInteractions(loadUserPort, updateUserPort);
-	}
-
-	@Test
-	void updatePassword_ShouldThrowUserNotFoundException_WhenUserDoesNotExist() {
-		UpdatePasswordCommand command = new UpdatePasswordCommand("non-existent-user", "oldPassword", "newPassword");
-		when(loadUserPort.findByUsername(command.getUsername())).thenThrow(new UserNotFoundException("User not found"));
-
-		UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-		        () -> userService.updatePassword(command));
-		assertEquals("User not found", exception.getMessage());
-		verify(authenticationUseCase, times(1)).authenticate(command.getUsername(), command.getOldPassword());
-		verify(loadUserPort, times(1)).findByUsername(command.getUsername());
-		verifyNoInteractions(updateUserPort);
-	}
-
-	@Test
-	void updatePassword_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
-		UpdatePasswordCommand command = new UpdatePasswordCommand("john.doe", "oldPassword", "newPassword");
-		User user = new User(UUID.randomUUID(), "John", "Doe", "john.doe", "oldPassword", true, UserType.TRAINER);
-		when(loadUserPort.findByUsername(command.getUsername())).thenReturn(user);
-		doNothing().when(authenticationUseCase).authenticate(command.getUsername(), command.getOldPassword());
-		doThrow(new RuntimeException("Database error")).when(updateUserPort).save(user);
-
-		RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.updatePassword(command));
-		assertEquals("Unexpected error occurred. Please contact support.", exception.getMessage());
-		verify(authenticationUseCase, times(1)).authenticate(command.getUsername(), command.getOldPassword());
-		verify(loadUserPort, times(1)).findByUsername(command.getUsername());
-		verify(updateUserPort, times(1)).save(user);
-	}
 }

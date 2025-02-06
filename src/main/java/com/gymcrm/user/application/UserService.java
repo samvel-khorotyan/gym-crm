@@ -7,12 +7,14 @@ import com.gymcrm.user.application.port.input.*;
 import com.gymcrm.user.application.port.output.LoadUserPort;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
+import com.gymcrm.util.PasswordStorage;
 import com.gymcrm.util.UserUtil;
 import java.util.HashSet;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,14 +24,14 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUp
 	private final UserFactory userFactory;
 	private final UpdateUserPort updateUserPort;
 	private final LoadUserPort loadUserPort;
-	private final AuthenticationUseCase authenticationUseCase;
+	private final PasswordEncoder passwordEncoder;
 
 	public UserService(UserFactory userFactory, UpdateUserPort updateUserPort, LoadUserPort loadUserPort,
-	        AuthenticationUseCase authenticationUseCase) {
+	        PasswordEncoder passwordEncoder) {
 		this.userFactory = userFactory;
 		this.updateUserPort = updateUserPort;
 		this.loadUserPort = loadUserPort;
-		this.authenticationUseCase = authenticationUseCase;
+		this.passwordEncoder = passwordEncoder;
 	}
 
 	@Override
@@ -39,10 +41,12 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUp
 			        || command.getLastName().isBlank()) {
 				throw new IllegalArgumentException("First name and last name cannot be null or empty");
 			}
-
+			String password = UserUtil.generatePassword();
 			command.setUsername(generateUsername(command.getFirstName(), command.getLastName()));
-			command.setPassword(UserUtil.generatePassword());
-			return updateUserPort.save(userFactory.createFrom(command));
+			command.setPassword(passwordEncoder.encode(password));
+			User user = updateUserPort.save(userFactory.createFrom(command));
+			PasswordStorage.storePassword(user.getId(), password);
+			return user;
 		} catch (Exception e) {
 			logger.error("Error creating user for: {} {}, Reason: {}", command.getFirstName(), command.getLastName(),
 			        e.getMessage(), e);
@@ -80,11 +84,11 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUp
 		logger.info("Transaction ID: {} - Updating password for user: {}", transactionId, command.getUsername());
 
 		try {
-			authenticationUseCase.authenticate(command.getUsername(), command.getOldPassword());
-
 			User user = loadUserPort.findByUsername(command.getUsername());
 
-			user.setPassword(command.getNewPassword());
+			passwordEncoder.matches(command.getOldPassword(), user.getPassword());
+
+			user.setPassword(passwordEncoder.encode(command.getNewPassword()));
 			updateUserPort.save(user);
 
 			logger.info("Transaction ID: {} - Successfully updated password for user: {}", transactionId,

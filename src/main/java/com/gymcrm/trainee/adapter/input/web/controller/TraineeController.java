@@ -1,7 +1,5 @@
 package com.gymcrm.trainee.adapter.input.web.controller;
 
-import com.gymcrm.configuration.security.Authenticated;
-import com.gymcrm.configuration.security.RequiresPermission;
 import com.gymcrm.trainee.adapter.input.web.request.TraineeActivateDeactivateRequest;
 import com.gymcrm.trainee.adapter.input.web.request.TraineeCreateRequest;
 import com.gymcrm.trainee.adapter.input.web.request.TraineeTrainersUpdateRequest;
@@ -28,6 +26,7 @@ import org.springframework.hateoas.RepresentationModel;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -75,13 +74,8 @@ public class TraineeController {
 	}
 
 	@GetMapping("/users/me/trainees")
-	@Authenticated
-	@RequiresPermission({"VIEW_TRAINEES"})
 	@ResponseStatus(HttpStatus.OK)
 	@ApiOperation(value = "Get Trainee",notes = "Fetches trainee details by username")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Trainee details fetched"),
 	        @ApiResponse(code = 404,message = "Trainee not found"),
 	        @ApiResponse(code = 401,message = "Unauthorized access")})
@@ -104,14 +98,10 @@ public class TraineeController {
 		return response;
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	@PutMapping("/users/me/trainees/{traineeId}")
-	@Authenticated
-	@RequiresPermission({"UPDATE_TRAINEES"})
 	@ResponseStatus(HttpStatus.OK)
 	@ApiOperation(value = "Update Trainee",notes = "Updates an existing trainee's details")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Trainee updated successfully"),
 	        @ApiResponse(code = 400,message = "Invalid data provided"),
 	        @ApiResponse(code = 404,message = "Trainee not found")})
@@ -134,13 +124,9 @@ public class TraineeController {
 		return response;
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	@DeleteMapping("/users/me/trainees")
-	@Authenticated
-	@RequiresPermission({"DELETE_TRAINEES"})
 	@ApiOperation(value = "Delete Trainee",notes = "Deletes a trainee by username")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 204,message = "Trainee deleted successfully"),
 	        @ApiResponse(code = 404,message = "Trainee not found")})
 	public ResponseEntity<RepresentationModel<?>> deleteByUsername(
@@ -162,13 +148,9 @@ public class TraineeController {
 		return ResponseEntity.noContent().header("Links", model.getLinks().toString()).build();
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	@PutMapping("/users/me/trainees/trainers")
-	@Authenticated
-	@RequiresPermission({"UPDATE_TRAINEE_TRAINERS"})
 	@ApiOperation(value = "Update trainers assigned to a trainee",notes = "Updates the list of trainers assigned to a specific trainee.")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Successfully updated trainee's trainers."),
 	        @ApiResponse(code = 400,message = "Invalid request or validation failed."),
 	        @ApiResponse(code = 404,message = "Trainee or trainers not found.")})
@@ -195,13 +177,8 @@ public class TraineeController {
 	}
 
 	@GetMapping("/users/me/trainees/trainings")
-	@Authenticated
-	@RequiresPermission({"VIEW_TRAINEES_TRAININGS"})
 	@ResponseStatus(HttpStatus.OK)
 	@ApiOperation(value = "Retrieve trainee trainings",notes = "Returns a list of trainings for a specific trainee based on the provided criteria.")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Successfully retrieved trainee trainings."),
 	        @ApiResponse(code = 404,message = "Trainee or trainings not found."),
 	        @ApiResponse(code = 401,message = "Unauthorized access."),
@@ -233,14 +210,10 @@ public class TraineeController {
 		return responses;
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	@PatchMapping("/users/me/trainees/state")
-	@Authenticated
-	@RequiresPermission({"UPDATE_TRAINEE_STATE"})
 	@ResponseStatus(HttpStatus.OK)
 	@ApiOperation(value = "Update trainee state",notes = "Allows updating specific state properties of a trainee, such as active status or custom states.")
-	@ApiImplicitParams({
-	        @ApiImplicitParam(name = "auth_username",value = "Authentication username",required = true,paramType = "header",dataType = "string"),
-	        @ApiImplicitParam(name = "auth_password",value = "Authentication password",required = true,paramType = "header",dataType = "string")})
 	@ApiResponses({@ApiResponse(code = 200,message = "Trainee state updated successfully."),
 	        @ApiResponse(code = 400,message = "Invalid request data."),
 	        @ApiResponse(code = 404,message = "Trainee not found."),
