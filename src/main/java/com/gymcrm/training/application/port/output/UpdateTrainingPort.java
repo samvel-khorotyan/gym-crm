@@ -10,4 +10,6 @@ public interface UpdateTrainingPort {
 	void saveAll(List<Training> trainings);
 
 	void deleteByTraineeId(UUID traineeId);
+
+	void deleteById(UUID id);
 }

@@ -1,5 +1,9 @@
 package com.gymcrm.unit.configuration.security.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.*;
+
 import com.gymcrm.configuration.security.auth.CustomAuthenticationProvider;
 import com.gymcrm.configuration.security.protection.BruteForceProtectionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,10 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CustomAuthenticationProviderTest {
@@ -33,7 +33,7 @@ class CustomAuthenticationProviderTest {
 	private CustomAuthenticationProvider customAuthenticationProvider;
 
 	private final String username = "testUser";
-    private UserDetails userDetails;
+	private UserDetails userDetails;
 
 	@BeforeEach
 	void setUp() {
@@ -44,8 +44,8 @@ class CustomAuthenticationProviderTest {
 
 	@Test
 	void shouldAuthenticateSuccessfullyWhenCredentialsAreCorrect() {
-        String password = "password123";
-        Authentication authentication = new UsernamePasswordAuthenticationToken(username, password);
+		String password = "password123";
+		Authentication authentication = new UsernamePasswordAuthenticationToken(username, password);
 
 		when(bruteForceProtectionService.isBlocked(username)).thenReturn(false);
 		when(userDetailsService.loadUserByUsername(username)).thenReturn(userDetails);

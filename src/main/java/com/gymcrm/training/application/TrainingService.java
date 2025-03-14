@@ -3,12 +3,16 @@ package com.gymcrm.training.application;
 import com.gymcrm.trainee.application.exception.TraineeNotFoundException;
 import com.gymcrm.trainee.application.port.output.LoadTraineePort;
 import com.gymcrm.trainee.application.port.output.UpdateTraineePort;
+import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
 import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
+import com.gymcrm.trainer.application.port.output.UpdateTrainerWorkloadPort;
+import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.application.factory.TrainingFactory;
 import com.gymcrm.training.application.port.input.CreateTrainingCommand;
 import com.gymcrm.training.application.port.input.LoadTrainingUseCase;
 import com.gymcrm.training.application.port.input.TrainingCreationUseCase;
+import com.gymcrm.training.application.port.input.UpdateTrainingUseCase;
 import com.gymcrm.training.application.port.output.LoadTrainingPort;
 import com.gymcrm.training.application.port.output.UpdateTrainingPort;
 import com.gymcrm.training.domain.Training;
@@ -16,6 +20,7 @@ import com.gymcrm.trainingtype.application.port.output.LoadTrainingTypePort;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -23,7 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class TrainingService implements TrainingCreationUseCase, LoadTrainingUseCase {
+public class TrainingService implements TrainingCreationUseCase, LoadTrainingUseCase, UpdateTrainingUseCase {
 	private static final Logger logger = LoggerFactory.getLogger(TrainingService.class);
 
 	private final UpdateTrainingPort updateTrainingPort;
@@ -33,10 +38,12 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 	private final LoadTrainerPort loadTrainerPort;
 	private final UpdateTraineePort updateTraineePort;
 	private final LoadTrainingTypePort loadTrainingTypePort;
+	private final UpdateTrainerWorkloadPort updateTrainerWorkloadPort;
 
 	public TrainingService(UpdateTrainingPort updateTrainingPort, LoadTrainingPort loadTrainingPort,
 	        TrainingFactory trainingFactory, LoadTraineePort loadTraineePort, LoadTrainerPort loadTrainerPort,
-	        UpdateTraineePort updateTraineePort, LoadTrainingTypePort loadTrainingTypePort) {
+	        UpdateTraineePort updateTraineePort, LoadTrainingTypePort loadTrainingTypePort,
+	        UpdateTrainerWorkloadPort updateTrainerWorkloadPort) {
 		this.updateTrainingPort = updateTrainingPort;
 		this.loadTrainingPort = loadTrainingPort;
 		this.trainingFactory = trainingFactory;
@@ -44,6 +51,7 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 		this.loadTrainerPort = loadTrainerPort;
 		this.updateTraineePort = updateTraineePort;
 		this.loadTrainingTypePort = loadTrainingTypePort;
+		this.updateTrainerWorkloadPort = updateTrainerWorkloadPort;
 	}
 
 	@Transactional
@@ -73,6 +81,9 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 			updateTraineePort.save(trainee);
 			updateTrainingPort.save(training);
 
+			// Send trainer workload to secondary service
+			updateTrainerWorkloadPort.sendTrainerWorkload(training, "ADD");
+
 			logger.info("Transaction ID: {} - Successfully created training: {}", transactionId,
 			        command.getTrainingName());
 		} catch (TraineeNotFoundException | TrainerNotFoundException e) {
@@ -82,6 +93,50 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 			logger.error("Transaction ID: {} - Failed to create training with name: {}, Reason: {}", transactionId,
 			        command.getTrainingName(), e.getMessage(), e);
 			throw new RuntimeException("Failed to create training", e);
+		}
+	}
+
+	@Transactional(rollbackFor = Exception.class)
+	public void deleteTraining(UUID trainingId) {
+		String transactionId = MDC.get("transactionId");
+		logger.info("Transaction ID: {} - Starting transaction to delete training with ID: {}", transactionId,
+		        trainingId);
+
+		try {
+			Training training = loadTrainingPort.findById(trainingId);
+
+			logger.info("Transaction ID: {} - Training details before deletion: ID={}, Name={}, Trainee={}, Trainer={}",
+			        transactionId, training.getId(), training.getTrainingName(),
+			        training.getTrainee().getUser().getUsername(), training.getTrainer().getUser().getUsername());
+
+			Trainee trainee = training.getTrainee();
+			Trainer trainer = training.getTrainer();
+
+			updateTrainerWorkloadPort.sendTrainerWorkload(training, "DELETE");
+
+			updateTrainingPort.deleteById(trainingId);
+
+			logger.info("Transaction ID: {} - Deleted training with ID: {}", transactionId, trainingId);
+
+			// Check if there are other trainings between this trainee and trainer
+			boolean hasOtherTrainings = loadTrainingPort.existsByTraineeAndTrainer(trainee.getId(), trainer.getId());
+
+			// If no other trainings exist, remove the relationship
+			if (!hasOtherTrainings && trainee.getTrainers() != null) {
+				trainee.getTrainers().remove(trainer);
+				updateTraineePort.save(trainee);
+
+				logger.info(
+				        "Transaction ID: {} - Removed trainer-trainee relationship as no more trainings exist between them",
+				        transactionId);
+			}
+
+			logger.info("Transaction ID: {} - Successfully completed transaction to delete training with ID: {}",
+			        transactionId, trainingId);
+		} catch (Exception e) {
+			logger.error("Transaction ID: {} - Transaction rolled back for training with ID: {}, Reason: {}",
+			        transactionId, trainingId, e.getMessage(), e);
+			throw new RuntimeException("Failed to delete training: " + e.getMessage(), e);
 		}
 	}
 

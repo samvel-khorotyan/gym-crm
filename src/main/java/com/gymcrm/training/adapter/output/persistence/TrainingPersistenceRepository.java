@@ -23,4 +23,10 @@ public interface TrainingPersistenceRepository
 
 	@Query("SELECT t FROM Training t WHERE t.trainer.user.username IN :usernames")
 	List<Training> findAllByTrainerUsernames(@Param("usernames") List<String> usernames);
+
+	boolean existsByTraineeIdAndTrainerId(UUID traineeId, UUID trainerId);
+
+	@Modifying
+	@Query("DELETE FROM Training t WHERE t.id = :id")
+	void deleteTrainingById(@Param("id") UUID id);
 }
