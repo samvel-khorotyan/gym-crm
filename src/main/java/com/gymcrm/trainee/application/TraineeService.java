@@ -10,6 +10,7 @@ import com.gymcrm.trainee.application.port.output.UpdateTraineePort;
 import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
 import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
+import com.gymcrm.trainer.application.port.output.UpdateTrainerWorkloadPort;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.application.factory.TrainingFactory;
 import com.gymcrm.training.application.port.input.CreateTrainingCommand;
@@ -21,13 +22,19 @@ import com.gymcrm.user.application.port.input.*;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
 import com.gymcrm.user.domain.UserType;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,12 +53,14 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 	private final UserUpdateMapper userUpdateMapper;
 	private final LoadTrainingPort loadTrainingPort;
 	private final TrainingFactory trainingFactory;
+	private final UpdateTrainerWorkloadPort updateTrainerWorkloadPort;
 
 	public TraineeService(UpdateTraineePort updateTraineePort, UpdateUserPort updateUserPort,
 	        LoadTrainerPort loadTrainerPort, UpdateTrainingPort updateTrainingPort,
 	        UserCreationUseCase userCreationUseCase, TraineeFactory traineeFactory,
 	        TraineeUpdateMapper traineeUpdateMapper, UserUpdateMapper userUpdateMapper,
-	        LoadTrainingPort loadTrainingPort, TrainingFactory trainingFactory) {
+	        LoadTrainingPort loadTrainingPort, TrainingFactory trainingFactory,
+	        UpdateTrainerWorkloadPort updateTrainerWorkloadPort) {
 		this.updateTraineePort = updateTraineePort;
 		this.updateUserPort = updateUserPort;
 		this.loadTrainerPort = loadTrainerPort;
@@ -62,6 +71,7 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 		this.userUpdateMapper = userUpdateMapper;
 		this.loadTrainingPort = loadTrainingPort;
 		this.trainingFactory = trainingFactory;
+		this.updateTrainerWorkloadPort = updateTrainerWorkloadPort;
 	}
 
 	@Autowired
@@ -177,19 +187,59 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 	}
 
 	@Override
+	@Transactional
 	public void deleteByUsername(String username) {
 		String transactionId = MDC.get("transactionId");
-
-		logger.info("Transaction ID: {} - Deleting trainee with username: {}", transactionId, username);
+		logger.info("Transaction ID: {} - Starting deletion process for trainee with username: {}", transactionId,
+		        username);
 
 		try {
+			Trainee trainee = loadTraineePort.findByUsername(username);
+
+			if (trainee == null) {
+				logger.warn("Transaction ID: {} - Trainee not found with username: {}", transactionId, username);
+				throw new TraineeNotFoundException("Trainee not found with username: " + username);
+			}
+
+			List<Training> trainings = new ArrayList<>(trainee.getTrainings());
+
 			updateTraineePort.deleteByUsername(username);
 			logger.info("Transaction ID: {} - Successfully deleted trainee with username: {}", transactionId, username);
+
+			CompletableFuture<?>[] futures = trainings.stream().map(training -> CompletableFuture.runAsync(() -> {
+				try {
+					updateTrainerWorkloadPort.sendTrainerWorkload(training, "DELETE");
+					logger.debug(
+					        "Transaction ID: {} - Successfully sent DELETE workload for training ID: {} of trainee: {}",
+					        transactionId, training.getId(), username);
+				} catch (Exception e) {
+					logger.error(
+					        "Transaction ID: {} - Failed to send DELETE workload for training ID: {} of trainee: {}, Reason: {}",
+					        transactionId, training.getId(), username, e.getMessage(), e);
+				}
+			})).toArray(CompletableFuture[]::new);
+
+			try {
+				CompletableFuture.allOf(futures).get(30, TimeUnit.SECONDS);
+				logger.info("Transaction ID: {} - Successfully sent all DELETE workload notifications for trainee: {}",
+				        transactionId, username);
+			} catch (InterruptedException | ExecutionException | TimeoutException e) {
+				logger.warn("Transaction ID: {} - Not all workload notifications were sent for trainee: {}, Reason: {}",
+				        transactionId, username, e.getMessage());
+				if (e instanceof InterruptedException) {
+					Thread.currentThread().interrupt();
+				}
+			}
+
 		} catch (TraineeNotFoundException e) {
 			logger.warn("Transaction ID: {} - Trainee not found with username: {}", transactionId, username);
 			throw e;
+		} catch (DataIntegrityViolationException e) {
+			logger.error("Transaction ID: {} - Data integrity violation while deleting trainee: {}, Reason: {}",
+			        transactionId, username, e.getMessage(), e);
+			throw new RuntimeException("Cannot delete trainee due to data constraints", e);
 		} catch (Exception e) {
-			logger.error("Transaction ID: {} - Failed to delete trainee with username: {}, Reason: {}", transactionId,
+			logger.error("Transaction ID: {} - Unexpected error while deleting trainee: {}, Reason: {}", transactionId,
 			        username, e.getMessage(), e);
 			throw new RuntimeException("Failed to delete trainee by username", e);
 		}
