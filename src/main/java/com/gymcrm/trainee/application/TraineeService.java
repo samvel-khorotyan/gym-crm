@@ -145,17 +145,12 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 
 		try {
 			Trainee existingTrainee = loadTraineePort.findByIdWithTrainers(command.getTraineeId());
+			updateTraineeData(command, existingTrainee);
 
-			userUpdateMapper.updateUserFromCommand(
-			        new UpdateUserCommand(command.getFirstName(), command.getLastName(), command.getIsActive()),
-			        existingTrainee.getUser());
-
-			traineeUpdateMapper.updateTraineeFromCommand(command, existingTrainee);
-
+			Trainee updatedTrainee = updateTraineePort.save(existingTrainee);
 			logger.info("Transaction ID: {} - Successfully updated trainee with ID: {}", transactionId,
 			        command.getTraineeId());
-
-			return updateTraineePort.save(existingTrainee);
+			return updatedTrainee;
 		} catch (Exception e) {
 			logger.error("Transaction ID: {} - Failed to update trainee with ID: {}, Reason: {}", transactionId,
 			        command.getTraineeId(), e.getMessage(), e);
@@ -195,42 +190,11 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 
 		try {
 			Trainee trainee = loadTraineePort.findByUsername(username);
-
-			if (trainee == null) {
-				logger.warn("Transaction ID: {} - Trainee not found with username: {}", transactionId, username);
-				throw new TraineeNotFoundException("Trainee not found with username: " + username);
-			}
-
 			List<Training> trainings = new ArrayList<>(trainee.getTrainings());
 
 			updateTraineePort.deleteByUsername(username);
 			logger.info("Transaction ID: {} - Successfully deleted trainee with username: {}", transactionId, username);
-
-			CompletableFuture<?>[] futures = trainings.stream().map(training -> CompletableFuture.runAsync(() -> {
-				try {
-					updateTrainerWorkloadPort.sendTrainerWorkload(training, "DELETE");
-					logger.debug(
-					        "Transaction ID: {} - Successfully sent DELETE workload for training ID: {} of trainee: {}",
-					        transactionId, training.getId(), username);
-				} catch (Exception e) {
-					logger.error(
-					        "Transaction ID: {} - Failed to send DELETE workload for training ID: {} of trainee: {}, Reason: {}",
-					        transactionId, training.getId(), username, e.getMessage(), e);
-				}
-			})).toArray(CompletableFuture[]::new);
-
-			try {
-				CompletableFuture.allOf(futures).get(30, TimeUnit.SECONDS);
-				logger.info("Transaction ID: {} - Successfully sent all DELETE workload notifications for trainee: {}",
-				        transactionId, username);
-			} catch (InterruptedException | ExecutionException | TimeoutException e) {
-				logger.warn("Transaction ID: {} - Not all workload notifications were sent for trainee: {}, Reason: {}",
-				        transactionId, username, e.getMessage());
-				if (e instanceof InterruptedException) {
-					Thread.currentThread().interrupt();
-				}
-			}
-
+			sendTrainerWorkloadNotifications(trainings, username, transactionId);
 		} catch (TraineeNotFoundException e) {
 			logger.warn("Transaction ID: {} - Trainee not found with username: {}", transactionId, username);
 			throw e;
@@ -249,32 +213,17 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 	@Override
 	public Trainee updateTraineeTrainers(UpdateTraineeTrainersCommand command) {
 		String transactionId = MDC.get("transactionId");
-
 		logger.info("Transaction ID: {} - Updating trainers for trainee: {}", transactionId,
 		        command.getTraineeUsername());
 
 		try {
 			Trainee trainee = loadTraineePort.findByUsername(command.getTraineeUsername());
-
 			List<Trainer> trainers = loadTrainerPort.findAllByUsernames(command.getTrainerUsernames());
-			var trainingData = loadTrainingPort.findAllByTrainerUsernames(command.getTrainerUsernames());
-			List<Training> trainings = trainingData.stream().collect(Collectors.toMap(e -> e.getTrainer().getId(),
-			        Function.identity(), (existing, replacement) -> existing)).values().stream().toList();
+			List<Training> trainings = loadTrainingsForTrainers(command.getTrainerUsernames(), transactionId);
 
 			validateTrainers(command, trainers, trainings);
 
-			updateTrainingPort.deleteByTraineeId(trainee.getId());
-			trainee.setTrainers(trainers);
-			updateTrainingPort.saveAll(trainings.stream()
-			        .map(training -> trainingFactory.createFrom(new CreateTrainingCommand(trainee,
-			                training.getTrainer(), training.getTrainingName(), training.getTrainingType(),
-			                training.getTrainingDate(), training.getTrainingDuration())))
-			        .toList());
-
-			Trainee updatedTrainee = updateTraineePort.save(trainee);
-			logger.info("Transaction ID: {} - Successfully updated trainers for trainee: {}", transactionId,
-			        command.getTraineeUsername());
-			return updatedTrainee;
+			return updateTraineeWithTrainers(trainee, trainers, trainings, transactionId);
 		} catch (BadRequestException | TraineeNotFoundException | TrainerNotFoundException e) {
 			logger.warn("Transaction ID: {} - Validation error while updating trainers for trainee: {}, Reason: {}",
 			        transactionId, command.getTraineeUsername(), e.getMessage());
@@ -284,6 +233,79 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 			        transactionId, command.getTraineeUsername(), e.getMessage(), e);
 			throw e;
 		}
+	}
+
+	private void updateTraineeData(UpdateTraineeCommand command, Trainee existingTrainee) {
+		// Update user data
+		userUpdateMapper.updateUserFromCommand(
+		        new UpdateUserCommand(command.getFirstName(), command.getLastName(), command.getIsActive()),
+		        existingTrainee.getUser());
+
+		// Update trainee specific data
+		traineeUpdateMapper.updateTraineeFromCommand(command, existingTrainee);
+	}
+
+	private void sendTrainerWorkloadNotifications(List<Training> trainings, String username, String transactionId) {
+		CompletableFuture<?>[] futures = trainings.stream().map(training -> CompletableFuture.runAsync(() -> {
+			try {
+				updateTrainerWorkloadPort.sendTrainerWorkload(training, "DELETE");
+				logger.debug(
+				        "Transaction ID: {} - Successfully sent DELETE workload for training ID: {} of trainee: {}",
+				        transactionId, training.getId(), username);
+			} catch (Exception e) {
+				logger.error(
+				        "Transaction ID: {} - Failed to send DELETE workload for training ID: {} of trainee: {}, Reason: {}",
+				        transactionId, training.getId(), username, e.getMessage(), e);
+			}
+		})).toArray(CompletableFuture[]::new);
+
+		waitForWorkloadNotifications(futures, username, transactionId);
+	}
+
+	private void waitForWorkloadNotifications(CompletableFuture<?>[] futures, String username, String transactionId) {
+		try {
+			CompletableFuture.allOf(futures).get(30, TimeUnit.SECONDS);
+			logger.info("Transaction ID: {} - Successfully sent all DELETE workload notifications for trainee: {}",
+			        transactionId, username);
+		} catch (InterruptedException | ExecutionException | TimeoutException e) {
+			logger.warn("Transaction ID: {} - Not all workload notifications were sent for trainee: {}, Reason: {}",
+			        transactionId, username, e.getMessage());
+			if (e instanceof InterruptedException) {
+				Thread.currentThread().interrupt();
+			}
+		}
+	}
+
+	private List<Training> loadTrainingsForTrainers(List<String> trainerUsernames, String transactionId) {
+		var trainingData = loadTrainingPort.findAllByTrainerUsernames(trainerUsernames);
+		List<Training> trainings = trainingData.stream().collect(
+		        Collectors.toMap(e -> e.getTrainer().getId(), Function.identity(), (existing, replacement) -> existing))
+		        .values().stream().toList();
+
+		logger.debug("Transaction ID: {} - Loaded {} unique trainings for trainers", transactionId, trainings.size());
+		return trainings;
+	}
+
+	private Trainee updateTraineeWithTrainers(Trainee trainee, List<Trainer> trainers, List<Training> trainings,
+	        String transactionId) {
+		updateTrainingPort.deleteByTraineeId(trainee.getId());
+		trainee.setTrainers(trainers);
+
+		List<Training> newTrainings = createTrainingsForTrainee(trainee, trainings);
+		updateTrainingPort.saveAll(newTrainings);
+
+		Trainee updatedTrainee = updateTraineePort.save(trainee);
+		logger.info("Transaction ID: {} - Successfully updated trainers for trainee: {}", transactionId,
+		        trainee.getUser().getUsername());
+		return updatedTrainee;
+	}
+
+	private List<Training> createTrainingsForTrainee(Trainee trainee, List<Training> trainings) {
+		return trainings.stream()
+		        .map(training -> trainingFactory.createFrom(new CreateTrainingCommand(trainee, training.getTrainer(),
+		                training.getTrainingName(), training.getTrainingType(), training.getTrainingDate(),
+		                training.getTrainingDuration())))
+		        .toList();
 	}
 
 	private void validateTrainers(UpdateTraineeTrainersCommand command, List<Trainer> trainers,

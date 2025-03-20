@@ -164,8 +164,9 @@ class TrainerWorkloadDashboardServiceTest {
 
 		Map<String, Integer> workloadBySpecialization = result.getWorkloadBySpecialization();
 		assertNotNull(workloadBySpecialization, "Workload by specialization should not be null");
+		assertEquals(0, workloadBySpecialization.getOrDefault("Fitness", 0), "Fitness workload should be 0 hours");
 		assertEquals(5, workloadBySpecialization.get("Yoga"), "Yoga workload should be 5 hours");
-		assertEquals(1, workloadBySpecialization.size(), "Should have 1 specialization");
+		assertEquals(2, workloadBySpecialization.size(), "Should have 2 specializations");
 
 		verify(loadTrainerPort).findAll();
 		verify(loadTrainerWorkloadUseCase).loadTrainerMonthlyWorkload("john.doe", currentYear, currentMonth);

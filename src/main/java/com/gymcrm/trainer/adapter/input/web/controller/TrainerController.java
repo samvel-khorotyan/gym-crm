@@ -131,6 +131,7 @@ public class TrainerController {
 	}
 
 	@GetMapping("/users/me/trainers/unassigned")
+	@ResponseStatus(HttpStatus.OK)
 	@ApiOperation(value = "Get trainers not assigned to any trainee",notes = "Returns a list of trainers that are not assigned to a specific trainee.")
 	@ApiResponses({@ApiResponse(code = 200,message = "Successfully retrieved trainers."),
 	        @ApiResponse(code = 404,message = "Trainer not found."),
@@ -190,6 +191,7 @@ public class TrainerController {
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
+	@ResponseStatus(HttpStatus.OK)
 	@PatchMapping("/users/me/trainers/state")
 	@ApiOperation(value = "Update trainer state",notes = "Allows updating specific state properties of a trainer, such as active status or custom states.")
 	@ApiResponses({@ApiResponse(code = 200,message = "Trainer state updated successfully."),

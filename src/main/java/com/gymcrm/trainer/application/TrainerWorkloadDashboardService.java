@@ -7,9 +7,9 @@ import com.gymcrm.trainer.application.port.input.LoadTrainerWorkloadUseCase;
 import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
 import com.gymcrm.trainer.domain.Trainer;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,45 +29,77 @@ public class TrainerWorkloadDashboardService implements LoadTrainerWorkloadDashb
 		int currentMonth = now.getMonthValue();
 
 		int totalTrainers = trainers.size();
-		int activeTrainers = 0;
-		int totalWorkloadHours = 0;
-		int maxWorkloadHours = 0;
-		String mostBusyTrainer = "";
-		Map<String, Integer> workloadBySpecialization = new HashMap<>();
 
-		for (Trainer trainer : trainers) {
-			if (trainer.getUser().getIsActive()) {
-				activeTrainers++;
+		List<Trainer> activeTrainers = getActiveTrainers(trainers);
+		int activeTrainersCount = activeTrainers.size();
 
-				String username = trainer.getUser().getUsername();
-				try {
-					TrainerMonthlyWorkloadResponse workload = loadTrainerWorkloadUseCase
-					        .loadTrainerMonthlyWorkload(username, currentYear, currentMonth);
+		Map<Trainer, Integer> trainerWorkloadMap = calculateTrainerWorkloads(activeTrainers, currentYear, currentMonth);
 
-					int workloadHours = workload.getSummaryDuration() / 60; // Convert minutes to hours
-					totalWorkloadHours += workloadHours;
+		int totalWorkloadHours = calculateTotalWorkloadHours(trainerWorkloadMap);
+		double averageWorkloadHours = calculateAverageWorkload(totalWorkloadHours, activeTrainersCount);
 
-					if (workloadHours > maxWorkloadHours) {
-						maxWorkloadHours = workloadHours;
-						mostBusyTrainer = trainer.getUser().getFirstName() + " " + trainer.getUser().getLastName();
-					}
+		MostBusyTrainerInfo mostBusyTrainerInfo = findMostBusyTrainer(trainerWorkloadMap);
 
-					// Aggregate by specialization
-					String specialization = trainer.getSpecialization();
-					workloadBySpecialization.put(specialization,
-					        workloadBySpecialization.getOrDefault(specialization, 0) + workloadHours);
+		Map<String, Integer> workloadBySpecialization = aggregateWorkloadBySpecialization(trainerWorkloadMap);
 
-				} catch (Exception e) {
-					log.warn("Failed to get workload for trainer: {}, Error: {}", username, e.getMessage());
-				}
-			}
+		return buildWorkloadStatistics(totalTrainers, activeTrainersCount, totalWorkloadHours, averageWorkloadHours,
+		        mostBusyTrainerInfo.name(), mostBusyTrainerInfo.workloadHours(), workloadBySpecialization);
+	}
+
+	private List<Trainer> getActiveTrainers(List<Trainer> trainers) {
+		return trainers.stream().filter(trainer -> trainer.getUser().getIsActive()).collect(Collectors.toList());
+	}
+
+	private Map<Trainer, Integer> calculateTrainerWorkloads(List<Trainer> activeTrainers, int year, int month) {
+		return activeTrainers.stream().collect(
+		        Collectors.toMap(trainer -> trainer, trainer -> getTrainerWorkloadHours(trainer, year, month)));
+	}
+
+	private int getTrainerWorkloadHours(Trainer trainer, int year, int month) {
+		String username = trainer.getUser().getUsername();
+		try {
+			TrainerMonthlyWorkloadResponse workload = loadTrainerWorkloadUseCase.loadTrainerMonthlyWorkload(username,
+			        year, month);
+			return workload.getSummaryDuration() / 60; // Convert minutes to hours
+		} catch (Exception e) {
+			log.warn("Failed to get workload for trainer: {}, Error: {}", username, e.getMessage());
+			return 0;
 		}
+	}
 
-		double averageWorkloadHours = activeTrainers > 0 ? (double) totalWorkloadHours / activeTrainers : 0;
+	private int calculateTotalWorkloadHours(Map<Trainer, Integer> trainerWorkloadMap) {
+		return trainerWorkloadMap.values().stream().mapToInt(Integer::intValue).sum();
+	}
+
+	private double calculateAverageWorkload(int totalWorkloadHours, int activeTrainersCount) {
+		return activeTrainersCount > 0 ? (double) totalWorkloadHours / activeTrainersCount : 0;
+	}
+
+	private MostBusyTrainerInfo findMostBusyTrainer(Map<Trainer, Integer> trainerWorkloadMap) {
+		return trainerWorkloadMap.entrySet().stream().max(Map.Entry.comparingByValue())
+		        .map(entry -> new MostBusyTrainerInfo(getTrainerFullName(entry.getKey()), entry.getValue()))
+		        .orElse(new MostBusyTrainerInfo("", 0));
+	}
+
+	private String getTrainerFullName(Trainer trainer) {
+		return trainer.getUser().getFirstName() + " " + trainer.getUser().getLastName();
+	}
+
+	private Map<String, Integer> aggregateWorkloadBySpecialization(Map<Trainer, Integer> trainerWorkloadMap) {
+		return trainerWorkloadMap.entrySet().stream().collect(Collectors
+		        .groupingBy(entry -> entry.getKey().getSpecialization(), Collectors.summingInt(Map.Entry::getValue)));
+	}
+
+	private TrainerWorkloadStatistics buildWorkloadStatistics(int totalTrainers, int activeTrainers,
+	        int totalWorkloadHours, double averageWorkloadHours, String mostBusyTrainer, int maxWorkloadHours,
+	        Map<String, Integer> workloadBySpecialization) {
 
 		return TrainerWorkloadStatistics.builder().totalTrainers(totalTrainers).activeTrainers(activeTrainers)
 		        .totalWorkloadHours(totalWorkloadHours).averageWorkloadHours(averageWorkloadHours)
 		        .maxWorkloadHours(maxWorkloadHours).mostBusyTrainer(mostBusyTrainer)
 		        .workloadBySpecialization(workloadBySpecialization).build();
+	}
+
+	private record MostBusyTrainerInfo(String name, int workloadHours) {
 	}
 }
