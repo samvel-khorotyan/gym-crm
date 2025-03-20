@@ -9,6 +9,7 @@ import com.gymcrm.trainee.application.port.output.UpdateTraineePort;
 import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
 import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
+import com.gymcrm.trainer.application.port.output.UpdateTrainerWorkloadPort;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.application.TrainingService;
 import com.gymcrm.training.application.factory.TrainingFactory;
@@ -51,6 +52,9 @@ class TrainingServiceTest {
 	@Mock
 	private LoadTrainingPort loadTrainingPort;
 
+	@Mock
+	private UpdateTrainerWorkloadPort updateTrainerWorkloadPort;
+
 	@InjectMocks
 	private TrainingService trainingService;
 
@@ -74,11 +78,13 @@ class TrainingServiceTest {
 		when(loadTrainerPort.findByUsername(trainerUsername)).thenReturn(trainer);
 		when(loadTrainingTypePort.findByTrainingTypeName(trainingName)).thenReturn(trainingType);
 		when(trainingFactory.createFrom(command)).thenReturn(training);
+		doNothing().when(updateTrainerWorkloadPort).sendTrainerWorkload(training, "ADD");
 
 		trainingService.create(command);
 
 		verify(updateTraineePort).save(trainee);
 		verify(updateTrainingPort).save(training);
+		verify(updateTrainerWorkloadPort).sendTrainerWorkload(training, "ADD");
 	}
 
 	@Test
@@ -94,6 +100,7 @@ class TrainingServiceTest {
 
 		verifyNoInteractions(loadTrainerPort);
 		verifyNoInteractions(updateTrainingPort);
+		verifyNoInteractions(updateTrainerWorkloadPort);
 	}
 
 	@Test
@@ -112,6 +119,7 @@ class TrainingServiceTest {
 
 		verify(loadTraineePort).findByUsername(traineeUsername);
 		verifyNoInteractions(updateTrainingPort);
+		verifyNoInteractions(updateTrainerWorkloadPort);
 	}
 
 	@Test
@@ -134,6 +142,7 @@ class TrainingServiceTest {
 		verify(loadTraineePort).findByUsername(traineeUsername);
 		verify(loadTrainerPort).findByUsername(trainerUsername);
 		verifyNoInteractions(updateTrainingPort);
+		verifyNoInteractions(updateTrainerWorkloadPort);
 	}
 
 	@Test
@@ -157,11 +166,15 @@ class TrainingServiceTest {
 		when(loadTrainerPort.findByUsername(trainerUsername)).thenReturn(trainer);
 		when(loadTrainingTypePort.findByTrainingTypeName(trainingName)).thenReturn(trainingType);
 		when(trainingFactory.createFrom(command)).thenReturn(training);
+		doNothing().when(updateTrainerWorkloadPort).sendTrainerWorkload(training, "ADD");
 
 		trainingService.create(command);
 
 		verify(updateTraineePort).save(trainee);
 		verify(updateTrainingPort).save(training);
+		verify(updateTrainerWorkloadPort).sendTrainerWorkload(training, "ADD");
+		assertNotNull(trainee.getTrainers(), "Trainee's trainers list should not be null");
+		assertTrue(trainee.getTrainers().contains(trainer), "Trainer should be added to trainee's trainers list");
 	}
 
 	@Test
@@ -295,7 +308,6 @@ class TrainingServiceTest {
 		List<Training> result = trainingService.findTrainerTrainingsByCriteria(username, startDate, endDate,
 		        traineeName);
 
-		assertNotNull(result, "Result should not be null");
 		assertEquals(2, result.size(), "Result size should match the number of trainings");
 		verify(loadTrainingPort, times(1)).findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName);
 	}
@@ -351,5 +363,19 @@ class TrainingServiceTest {
 		assertEquals("Failed to fetch trainings by criteria.", exception.getMessage(),
 		        "Exception message should match");
 		verify(loadTrainingPort, times(1)).findTrainerTrainingsByCriteria(username, startDate, endDate, traineeName);
+	}
+
+	@Test
+	void deleteTraining_ShouldThrowException_WhenTrainingNotFound() {
+		// Arrange
+		UUID trainingId = UUID.randomUUID();
+		when(loadTrainingPort.findById(trainingId)).thenThrow(new RuntimeException("Training not found"));
+
+		// Act & Assert
+		RuntimeException exception = assertThrows(RuntimeException.class,
+		        () -> trainingService.deleteTraining(trainingId));
+		assertEquals("Failed to delete training: Training not found", exception.getMessage());
+		verify(updateTrainingPort, never()).deleteById(any());
+		verify(updateTrainerWorkloadPort, never()).sendTrainerWorkload(any(), any());
 	}
 }

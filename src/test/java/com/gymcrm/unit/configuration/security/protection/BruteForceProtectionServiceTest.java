@@ -10,70 +10,70 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class BruteForceProtectionServiceTest {
-    private BruteForceProtectionService bruteForceProtectionService;
-    private final String username = "testUser";
+	private BruteForceProtectionService bruteForceProtectionService;
+	private final String username = "testUser";
 
-    @BeforeEach
-    void setUp() {
-        bruteForceProtectionService = new BruteForceProtectionService();
-    }
+	@BeforeEach
+	void setUp() {
+		bruteForceProtectionService = new BruteForceProtectionService();
+	}
 
-    @Test
-    void shouldNotBlockUserInitially() {
-        assertFalse(bruteForceProtectionService.isBlocked(username));
-    }
+	@Test
+	void shouldNotBlockUserInitially() {
+		assertFalse(bruteForceProtectionService.isBlocked(username));
+	}
 
-    @Test
-    void shouldBlockUserAfterThreeFailedAttempts() {
-        bruteForceProtectionService.loginFailed(username);
-        bruteForceProtectionService.loginFailed(username);
-        bruteForceProtectionService.loginFailed(username);
+	@Test
+	void shouldBlockUserAfterThreeFailedAttempts() {
+		bruteForceProtectionService.loginFailed(username);
+		bruteForceProtectionService.loginFailed(username);
+		bruteForceProtectionService.loginFailed(username);
 
-        assertTrue(bruteForceProtectionService.isBlocked(username));
-    }
+		assertTrue(bruteForceProtectionService.isBlocked(username));
+	}
 
-    @Test
-    void shouldNotBlockUserBeforeMaxAttempts() {
-        bruteForceProtectionService.loginFailed(username);
-        bruteForceProtectionService.loginFailed(username);
+	@Test
+	void shouldNotBlockUserBeforeMaxAttempts() {
+		bruteForceProtectionService.loginFailed(username);
+		bruteForceProtectionService.loginFailed(username);
 
-        assertFalse(bruteForceProtectionService.isBlocked(username));
-    }
+		assertFalse(bruteForceProtectionService.isBlocked(username));
+	}
 
-    @Test
-    void shouldUnblockUserAfterLockTimeExpires() throws Exception {
-        bruteForceProtectionService.loginFailed(username);
-        bruteForceProtectionService.loginFailed(username);
-        bruteForceProtectionService.loginFailed(username);
+	@Test
+	void shouldUnblockUserAfterLockTimeExpires() throws Exception {
+		bruteForceProtectionService.loginFailed(username);
+		bruteForceProtectionService.loginFailed(username);
+		bruteForceProtectionService.loginFailed(username);
 
-        setLockTime(LocalDateTime.now().minusSeconds(1));
+		setLockTime(LocalDateTime.now().minusSeconds(1));
 
-        assertFalse(bruteForceProtectionService.isBlocked(username));
-    }
+		assertFalse(bruteForceProtectionService.isBlocked(username));
+	}
 
-    @Test
-    void shouldNotAllowLoginWhenUserIsStillBlocked() throws Exception {
-        bruteForceProtectionService.loginFailed(username);
-        bruteForceProtectionService.loginFailed(username);
-        bruteForceProtectionService.loginFailed(username);
+	@Test
+	void shouldNotAllowLoginWhenUserIsStillBlocked() throws Exception {
+		bruteForceProtectionService.loginFailed(username);
+		bruteForceProtectionService.loginFailed(username);
+		bruteForceProtectionService.loginFailed(username);
 
-        setLockTime(LocalDateTime.now().plusSeconds(300));
+		setLockTime(LocalDateTime.now().plusSeconds(300));
 
-        assertTrue(bruteForceProtectionService.isBlocked(username));
-    }
+		assertTrue(bruteForceProtectionService.isBlocked(username));
+	}
 
-    private void setLockTime(LocalDateTime lockTime) throws Exception {
-        Field attemptsCacheField = BruteForceProtectionService.class.getDeclaredField("attemptsCache");
-        attemptsCacheField.setAccessible(true);
+	private void setLockTime(LocalDateTime lockTime) throws Exception {
+		Field attemptsCacheField = BruteForceProtectionService.class.getDeclaredField("attemptsCache");
+		attemptsCacheField.setAccessible(true);
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> attemptsCache = (Map<String, Object>) attemptsCacheField.get(bruteForceProtectionService);
+		@SuppressWarnings("unchecked")
+		Map<String, Object> attemptsCache = (Map<String, Object>) attemptsCacheField.get(bruteForceProtectionService);
 
-        Object failedLoginAttempt = attemptsCache.get(username);
-        if (failedLoginAttempt != null) {
-            Field lockTimeField = failedLoginAttempt.getClass().getDeclaredField("lockTime");
-            lockTimeField.setAccessible(true);
-            lockTimeField.set(failedLoginAttempt, lockTime);
-        }
-    }
+		Object failedLoginAttempt = attemptsCache.get(username);
+		if (failedLoginAttempt != null) {
+			Field lockTimeField = failedLoginAttempt.getClass().getDeclaredField("lockTime");
+			lockTimeField.setAccessible(true);
+			lockTimeField.set(failedLoginAttempt, lockTime);
+		}
+	}
 }

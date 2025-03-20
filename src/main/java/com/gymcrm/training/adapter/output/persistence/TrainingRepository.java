@@ -2,6 +2,7 @@ package com.gymcrm.training.adapter.output.persistence;
 
 import com.gymcrm.trainee.application.exception.TraineeNotFoundException;
 import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
+import com.gymcrm.training.application.exception.TrainingNotFoundException;
 import com.gymcrm.training.application.port.output.LoadTrainingPort;
 import com.gymcrm.training.application.port.output.UpdateTrainingPort;
 import com.gymcrm.training.domain.Training;
@@ -44,6 +45,21 @@ public class TrainingRepository implements UpdateTrainingPort, LoadTrainingPort 
 	@Override
 	public void deleteByTraineeId(UUID traineeId) {
 		repository.deleteAllByTraineeId(traineeId);
+	}
+
+	@Override
+	public void deleteById(UUID id) {
+		repository.deleteTrainingById(id);
+	}
+
+	@Override
+	public Training findById(UUID id) {
+		return repository.findById(id).orElseThrow(() -> TrainingNotFoundException.by(id));
+	}
+
+	@Override
+	public boolean existsByTraineeAndTrainer(UUID traineeId, UUID trainerId) {
+		return repository.existsByTraineeIdAndTrainerId(traineeId, trainerId);
 	}
 
 	@Override

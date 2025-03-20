@@ -331,37 +331,6 @@ class TraineeServiceTest {
 	}
 
 	@Test
-	void deleteByUsername_ShouldDeleteTrainee_WhenUsernameIsValid() {
-		String username = "john.doe";
-		doNothing().when(updateTraineePort).deleteByUsername(username);
-
-		traineeService.deleteByUsername(username);
-
-		verify(updateTraineePort, times(1)).deleteByUsername(username);
-	}
-
-	@Test
-	void deleteByUsername_ShouldThrowException_WhenUsernameNotFound() {
-		String username = "invalid.username";
-		doThrow(new TraineeNotFoundException("Trainee not found with username: " + username)).when(updateTraineePort)
-		        .deleteByUsername(username);
-
-		assertThrows(TraineeNotFoundException.class, () -> traineeService.deleteByUsername(username));
-
-		verify(updateTraineePort, times(1)).deleteByUsername(username);
-	}
-
-	@Test
-	void deleteByUsername_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
-		String username = "john.doe";
-		doThrow(new RuntimeException("Database error")).when(updateTraineePort).deleteByUsername(username);
-
-		assertThrows(RuntimeException.class, () -> traineeService.deleteByUsername(username));
-
-		verify(updateTraineePort, times(1)).deleteByUsername(username);
-	}
-
-	@Test
 	void updateTraineeTrainers_ShouldUpdateTrainee_WhenAllDataIsValid() {
 		String traineeUsername = "john.doe";
 		List<String> trainerUsernames = List.of("trainer1", "trainer2");

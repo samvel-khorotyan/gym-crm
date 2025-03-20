@@ -152,6 +152,7 @@ class TrainerControllerTest {
 
 	@Test
 	public void activateDeactivateTrainer_ReturnsOk_WhenValidRequestIsProvided() throws Exception {
+
 		doNothing().when(trainerUpdateUseCase).activateDeactivate(getActivateDeactivateTrainerCommand());
 
 		mockMvc.perform(MockMvcRequestBuilders.patch("/users/me/trainers/state").contentType(MediaType.APPLICATION_JSON)
