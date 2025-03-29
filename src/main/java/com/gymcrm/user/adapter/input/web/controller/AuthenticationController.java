@@ -8,6 +8,7 @@ import com.gymcrm.user.application.port.input.UserUpdateUseCase;
 import io.swagger.annotations.*;
 import java.util.UUID;
 import javax.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -16,17 +17,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequiredArgsConstructor
 @Api(tags = "Authentication Management")
 public class AuthenticationController {
 	private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
 
 	private final UserUpdateUseCase userUpdateUseCase;
 	private final BlacklistTokenUseCase blacklistTokenUseCase;
-
-	public AuthenticationController(UserUpdateUseCase userUpdateUseCase, BlacklistTokenUseCase blacklistTokenUseCase) {
-		this.userUpdateUseCase = userUpdateUseCase;
-		this.blacklistTokenUseCase = blacklistTokenUseCase;
-	}
 
 	@PostMapping("/users/me/login")
 	@ResponseStatus(HttpStatus.OK)

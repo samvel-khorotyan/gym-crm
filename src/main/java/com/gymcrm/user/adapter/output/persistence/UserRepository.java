@@ -6,15 +6,13 @@ import com.gymcrm.user.application.port.output.LoadUserPort;
 import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class UserRepository implements UpdateUserPort, LoadUserPort, AuthenticationPort {
 	private final UserPersistenceRepository repository;
-
-	public UserRepository(UserPersistenceRepository repository) {
-		this.repository = repository;
-	}
 
 	@Override
 	public User save(User user) {

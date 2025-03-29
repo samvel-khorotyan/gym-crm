@@ -11,6 +11,7 @@ import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
 import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
 import com.gymcrm.trainer.application.port.output.UpdateTrainerWorkloadPort;
+import com.gymcrm.trainer.domain.ActionType;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.application.factory.TrainingFactory;
 import com.gymcrm.training.application.port.input.CreateTrainingCommand;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -39,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseCase, LoadTraineeUseCase {
 	private static final Logger logger = LoggerFactory.getLogger(TraineeService.class);
 
@@ -54,25 +57,6 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 	private final LoadTrainingPort loadTrainingPort;
 	private final TrainingFactory trainingFactory;
 	private final UpdateTrainerWorkloadPort updateTrainerWorkloadPort;
-
-	public TraineeService(UpdateTraineePort updateTraineePort, UpdateUserPort updateUserPort,
-	        LoadTrainerPort loadTrainerPort, UpdateTrainingPort updateTrainingPort,
-	        UserCreationUseCase userCreationUseCase, TraineeFactory traineeFactory,
-	        TraineeUpdateMapper traineeUpdateMapper, UserUpdateMapper userUpdateMapper,
-	        LoadTrainingPort loadTrainingPort, TrainingFactory trainingFactory,
-	        UpdateTrainerWorkloadPort updateTrainerWorkloadPort) {
-		this.updateTraineePort = updateTraineePort;
-		this.updateUserPort = updateUserPort;
-		this.loadTrainerPort = loadTrainerPort;
-		this.updateTrainingPort = updateTrainingPort;
-		this.traineeFactory = traineeFactory;
-		this.userCreationUseCase = userCreationUseCase;
-		this.traineeUpdateMapper = traineeUpdateMapper;
-		this.userUpdateMapper = userUpdateMapper;
-		this.loadTrainingPort = loadTrainingPort;
-		this.trainingFactory = trainingFactory;
-		this.updateTrainerWorkloadPort = updateTrainerWorkloadPort;
-	}
 
 	@Autowired
 	public void setLoadTraineePort(LoadTraineePort loadTraineePort) {
@@ -248,7 +232,7 @@ public class TraineeService implements TraineeCreationUseCase, TraineeUpdateUseC
 	private void sendTrainerWorkloadNotifications(List<Training> trainings, String username, String transactionId) {
 		CompletableFuture<?>[] futures = trainings.stream().map(training -> CompletableFuture.runAsync(() -> {
 			try {
-				updateTrainerWorkloadPort.sendTrainerWorkload(training, "DELETE");
+				updateTrainerWorkloadPort.sendTrainerWorkload(training, ActionType.DELETE);
 				logger.debug(
 				        "Transaction ID: {} - Successfully sent DELETE workload for training ID: {} of trainee: {}",
 				        transactionId, training.getId(), username);

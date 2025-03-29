@@ -3,17 +3,15 @@ package com.gymcrm.common.metrics.infrastructure;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class DatabaseHealthIndicator implements HealthIndicator {
 	private final DataSource dataSource;
-
-	public DatabaseHealthIndicator(DataSource dataSource) {
-		this.dataSource = dataSource;
-	}
 
 	@Override
 	public Health health() {

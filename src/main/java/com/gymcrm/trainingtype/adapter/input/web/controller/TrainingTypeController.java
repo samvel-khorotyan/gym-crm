@@ -6,6 +6,7 @@ import com.gymcrm.trainingtype.domain.TrainingType;
 import io.swagger.annotations.*;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -15,15 +16,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 @Api(tags = "Training Type Management")
 public class TrainingTypeController {
 	private static final Logger logger = LoggerFactory.getLogger(TrainingTypeController.class);
 
 	private final LoadTrainingTypeUseCase loadTrainingTypeUseCase;
-
-	public TrainingTypeController(LoadTrainingTypeUseCase loadTrainingTypeUseCase) {
-		this.loadTrainingTypeUseCase = loadTrainingTypeUseCase;
-	}
 
 	@GetMapping("/users/me/training-types")
 	@ResponseStatus(HttpStatus.OK)

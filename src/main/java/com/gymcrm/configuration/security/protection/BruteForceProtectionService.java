@@ -5,8 +5,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class BruteForceProtectionService {
 	private static final int MAX_ATTEMPTS = 3;
@@ -28,12 +30,12 @@ public class BruteForceProtectionService {
 			return false;
 
 		if (attempt.getLockTime() != null && LocalDateTime.now().isBefore(attempt.getLockTime())) {
-			System.out.println("User " + username + " is still blocked!"); // Debugging
+			log.debug("User {} is still blocked!", username);
 			return true;
 		}
 
 		if (attempt.getLockTime() != null && LocalDateTime.now().isAfter(attempt.getLockTime())) {
-			System.out.println("User " + username + " block expired, allowing login."); // Debugging
+			log.debug("User {} block expired, allowing login.", username);
 			attemptsCache.remove(username);
 		}
 
@@ -44,7 +46,7 @@ public class BruteForceProtectionService {
 		FailedLoginAttempt attempt = attemptsCache.get(username);
 
 		if (attempt != null && attempt.getLockTime() != null && LocalDateTime.now().isBefore(attempt.getLockTime())) {
-			System.out.println("User " + username + " is still blocked and cannot log in.");
+			log.debug("User {} is still blocked and cannot log in.", username);
 			return;
 		}
 

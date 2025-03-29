@@ -4,20 +4,18 @@ import com.gymcrm.trainingtype.application.port.input.LoadTrainingTypeUseCase;
 import com.gymcrm.trainingtype.application.port.output.LoadTrainingTypePort;
 import com.gymcrm.trainingtype.domain.TrainingType;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class TrainingTypeService implements LoadTrainingTypeUseCase {
 	private static final Logger logger = LoggerFactory.getLogger(TrainingTypeService.class);
 
 	private final LoadTrainingTypePort loadTrainingTypePort;
-
-	public TrainingTypeService(LoadTrainingTypePort loadTrainingTypePort) {
-		this.loadTrainingTypePort = loadTrainingTypePort;
-	}
 
 	@Override
 	public List<TrainingType> loadAll() {

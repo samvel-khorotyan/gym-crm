@@ -13,8 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Api(tags = "Trainer Dashboard")
 @RequiredArgsConstructor
+@Api(tags = "Trainer Dashboard")
 public class TrainerWorkloadDashboardController {
 	private static final Logger logger = LoggerFactory.getLogger(TrainerWorkloadDashboardController.class);
 

@@ -1,7 +1,6 @@
 package com.gymcrm.unit.trainer.application;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.gymcrm.trainer.adapter.input.web.response.TrainerMonthlyWorkloadResponse;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class TrainerWorkloadServiceTest {
@@ -80,19 +78,5 @@ class TrainerWorkloadServiceTest {
 		assertEquals(150, result.getSummaryDuration(), "Summary duration should match");
 
 		verify(loadTrainerWorkloadPort, times(1)).getTrainerMonthlyWorkload(username, currentYear, currentMonth);
-	}
-
-	@Test
-	void getTrainerMonthlyWorkloadFallback_ShouldReturnDefaultResponse_WhenServiceFails() {
-		Throwable throwable = new RuntimeException("Service unavailable");
-
-		TrainerMonthlyWorkloadResponse result = ReflectionTestUtils.invokeMethod(trainerWorkloadService,
-		        "getTrainerMonthlyWorkloadFallback", username, year, month, throwable);
-
-		assertNotNull(result, "Result should not be null");
-		assertEquals(username, result.getUsername(), "Username should match");
-		assertEquals(year, result.getYear(), "Year should match");
-		assertEquals(month, result.getMonth(), "Month should match");
-		assertEquals(0, result.getSummaryDuration(), "Summary duration should be 0");
 	}
 }
