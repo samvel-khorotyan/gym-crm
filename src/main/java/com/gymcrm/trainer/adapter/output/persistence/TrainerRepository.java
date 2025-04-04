@@ -6,15 +6,13 @@ import com.gymcrm.trainer.application.port.output.UpdateTrainerPort;
 import com.gymcrm.trainer.domain.Trainer;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class TrainerRepository implements UpdateTrainerPort, LoadTrainerPort {
 	private final TrainerPersistenceRepository repository;
-
-	public TrainerRepository(TrainerPersistenceRepository repository) {
-		this.repository = repository;
-	}
 
 	@Override
 	public Trainer save(Trainer trainer) {

@@ -16,9 +16,9 @@ import org.hibernate.annotations.Type;
 @Setter
 @Getter
 @Entity
-@Table(name = "trainee")
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "trainee")
 public class Trainee {
 	@Id
 	@Type(type = "uuid-char")

@@ -11,6 +11,7 @@ import com.gymcrm.util.PasswordStorage;
 import com.gymcrm.util.UserUtil;
 import java.util.HashSet;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUpdateUseCase {
 	private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
@@ -25,14 +27,6 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUp
 	private final UpdateUserPort updateUserPort;
 	private final LoadUserPort loadUserPort;
 	private final PasswordEncoder passwordEncoder;
-
-	public UserService(UserFactory userFactory, UpdateUserPort updateUserPort, LoadUserPort loadUserPort,
-	        PasswordEncoder passwordEncoder) {
-		this.userFactory = userFactory;
-		this.updateUserPort = updateUserPort;
-		this.loadUserPort = loadUserPort;
-		this.passwordEncoder = passwordEncoder;
-	}
 
 	@Override
 	public User create(CreateUserCommand command) {

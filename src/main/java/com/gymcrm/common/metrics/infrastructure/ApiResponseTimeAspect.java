@@ -1,6 +1,7 @@
 package com.gymcrm.common.metrics.infrastructure;
 
 import com.gymcrm.common.metrics.application.ApiResponseTimeMetricService;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -8,12 +9,9 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class ApiResponseTimeAspect {
 	private final ApiResponseTimeMetricService apiResponseTimeMetricService;
-
-	public ApiResponseTimeAspect(ApiResponseTimeMetricService apiResponseTimeMetricService) {
-		this.apiResponseTimeMetricService = apiResponseTimeMetricService;
-	}
 
 	@Around("@annotation(org.springframework.web.bind.annotation.GetMapping) || "
 	        + "@annotation(org.springframework.web.bind.annotation.PostMapping) || "

@@ -10,6 +10,7 @@ import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
 import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
 import com.gymcrm.trainer.application.port.output.UpdateTrainerWorkloadPort;
+import com.gymcrm.trainer.domain.ActionType;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.application.TrainingService;
 import com.gymcrm.training.application.factory.TrainingFactory;
@@ -78,13 +79,13 @@ class TrainingServiceTest {
 		when(loadTrainerPort.findByUsername(trainerUsername)).thenReturn(trainer);
 		when(loadTrainingTypePort.findByTrainingTypeName(trainingName)).thenReturn(trainingType);
 		when(trainingFactory.createFrom(command)).thenReturn(training);
-		doNothing().when(updateTrainerWorkloadPort).sendTrainerWorkload(training, "ADD");
+		doNothing().when(updateTrainerWorkloadPort).sendTrainerWorkload(training, ActionType.ADD);
 
 		trainingService.create(command);
 
 		verify(updateTraineePort).save(trainee);
 		verify(updateTrainingPort).save(training);
-		verify(updateTrainerWorkloadPort).sendTrainerWorkload(training, "ADD");
+		verify(updateTrainerWorkloadPort).sendTrainerWorkload(training, ActionType.ADD);
 	}
 
 	@Test
@@ -166,13 +167,13 @@ class TrainingServiceTest {
 		when(loadTrainerPort.findByUsername(trainerUsername)).thenReturn(trainer);
 		when(loadTrainingTypePort.findByTrainingTypeName(trainingName)).thenReturn(trainingType);
 		when(trainingFactory.createFrom(command)).thenReturn(training);
-		doNothing().when(updateTrainerWorkloadPort).sendTrainerWorkload(training, "ADD");
+		doNothing().when(updateTrainerWorkloadPort).sendTrainerWorkload(training, ActionType.ADD);
 
 		trainingService.create(command);
 
 		verify(updateTraineePort).save(trainee);
 		verify(updateTrainingPort).save(training);
-		verify(updateTrainerWorkloadPort).sendTrainerWorkload(training, "ADD");
+		verify(updateTrainerWorkloadPort).sendTrainerWorkload(training, ActionType.ADD);
 		assertNotNull(trainee.getTrainers(), "Trainee's trainers list should not be null");
 		assertTrue(trainee.getTrainers().contains(trainer), "Trainer should be added to trainee's trainers list");
 	}

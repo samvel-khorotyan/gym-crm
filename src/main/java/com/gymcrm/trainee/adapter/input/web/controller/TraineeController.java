@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import javax.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -30,6 +31,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequiredArgsConstructor
 @Api(tags = "Trainee Management")
 public class TraineeController {
 	private static final Logger logger = LoggerFactory.getLogger(TraineeController.class);
@@ -38,14 +40,6 @@ public class TraineeController {
 	private final TraineeUpdateUseCase traineeUpdateUseCase;
 	private final LoadTrainingUseCase loadTrainingUseCase;
 	private final LoadTraineeUseCase loadTraineeUseCase;
-
-	public TraineeController(TraineeCreationUseCase traineeCreationUseCase, TraineeUpdateUseCase traineeUpdateUseCase,
-	        LoadTrainingUseCase loadTrainingUseCase, LoadTraineeUseCase loadTraineeUseCase) {
-		this.traineeCreationUseCase = traineeCreationUseCase;
-		this.traineeUpdateUseCase = traineeUpdateUseCase;
-		this.loadTrainingUseCase = loadTrainingUseCase;
-		this.loadTraineeUseCase = loadTraineeUseCase;
-	}
 
 	@PostMapping("/users/me/trainees")
 	@ResponseStatus(HttpStatus.CREATED)

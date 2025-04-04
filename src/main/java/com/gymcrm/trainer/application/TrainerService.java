@@ -15,6 +15,7 @@ import com.gymcrm.user.application.port.output.UpdateUserPort;
 import com.gymcrm.user.domain.User;
 import com.gymcrm.user.domain.UserType;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class TrainerService implements TrainerCreationUseCase, TrainerUpdateUseCase, LoadTrainerUseCase {
 	private static final Logger logger = LoggerFactory.getLogger(TrainerService.class);
 
@@ -33,17 +35,6 @@ public class TrainerService implements TrainerCreationUseCase, TrainerUpdateUseC
 	private final UpdateUserPort updateUserPort;
 	private final UserUpdateMapper userUpdateMapper;
 	private final TrainerUpdateMapper trainerUpdateMapper;
-
-	public TrainerService(UpdateTrainerPort updateTrainerPort, TrainerFactory trainerFactory,
-	        UserCreationUseCase userCreationUseCase, UpdateUserPort updateUserPort, UserUpdateMapper userUpdateMapper,
-	        TrainerUpdateMapper trainerUpdateMapper) {
-		this.updateTrainerPort = updateTrainerPort;
-		this.trainerFactory = trainerFactory;
-		this.userCreationUseCase = userCreationUseCase;
-		this.updateUserPort = updateUserPort;
-		this.userUpdateMapper = userUpdateMapper;
-		this.trainerUpdateMapper = trainerUpdateMapper;
-	}
 
 	@Autowired
 	public void setLoadTrainerPort(LoadTrainerPort loadTrainerPort) {

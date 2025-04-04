@@ -11,18 +11,16 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class JwtUtil {
 	private static final String SECRET_KEY = "your_secret_key_which_should_be_at_least_32_characters";
 	private static final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
 
 	private final TokenBlacklistPort tokenBlacklistPort;
-
-	public JwtUtil(TokenBlacklistPort tokenBlacklistPort) {
-		this.tokenBlacklistPort = tokenBlacklistPort;
-	}
 
 	public String generateToken(String username, String role) {
 		return Jwts.builder().setClaims(Map.of("role", role)).setSubject(username).setIssuedAt(new Date())

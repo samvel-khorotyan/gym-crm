@@ -5,6 +5,7 @@ import com.gymcrm.configuration.security.auth.CustomAuthenticationEntryPoint;
 import com.gymcrm.configuration.security.auth.JwtAuthenticationFilter;
 import com.gymcrm.configuration.security.auth.JwtAuthorizationFilter;
 import com.gymcrm.util.JwtUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,15 +23,11 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 	private final JwtAuthorizationFilter jwtAuthorizationFilter;
 	private final JwtUtil jwtUtil;
-
-	public SecurityConfig(JwtAuthorizationFilter jwtAuthorizationFilter, JwtUtil jwtUtil) {
-		this.jwtAuthorizationFilter = jwtAuthorizationFilter;
-		this.jwtUtil = jwtUtil;
-	}
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager,

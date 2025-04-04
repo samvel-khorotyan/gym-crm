@@ -2,18 +2,16 @@ package com.gymcrm.configuration;
 
 import com.gymcrm.common.ApplicationProperties;
 import javax.sql.DataSource;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
+@RequiredArgsConstructor
 public class DataSourceConfig {
 	private final ApplicationProperties applicationProperties;
-
-	public DataSourceConfig(ApplicationProperties applicationProperties) {
-		this.applicationProperties = applicationProperties;
-	}
 
 	@Bean
 	@Profile("local")

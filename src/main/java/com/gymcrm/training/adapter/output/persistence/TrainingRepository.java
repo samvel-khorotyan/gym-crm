@@ -11,16 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import javax.persistence.criteria.Predicate;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class TrainingRepository implements UpdateTrainingPort, LoadTrainingPort {
 	private final TrainingPersistenceRepository repository;
-
-	public TrainingRepository(TrainingPersistenceRepository repository) {
-		this.repository = repository;
-	}
 
 	@Override
 	public List<Training> findAll() {

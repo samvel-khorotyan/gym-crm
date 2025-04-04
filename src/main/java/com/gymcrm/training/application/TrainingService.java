@@ -7,6 +7,7 @@ import com.gymcrm.trainee.domain.Trainee;
 import com.gymcrm.trainer.application.exception.TrainerNotFoundException;
 import com.gymcrm.trainer.application.port.output.LoadTrainerPort;
 import com.gymcrm.trainer.application.port.output.UpdateTrainerWorkloadPort;
+import com.gymcrm.trainer.domain.ActionType;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.application.factory.TrainingFactory;
 import com.gymcrm.training.application.port.input.CreateTrainingCommand;
@@ -21,6 +22,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class TrainingService implements TrainingCreationUseCase, LoadTrainingUseCase, UpdateTrainingUseCase {
 	private static final Logger logger = LoggerFactory.getLogger(TrainingService.class);
 
@@ -39,20 +42,6 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 	private final UpdateTraineePort updateTraineePort;
 	private final LoadTrainingTypePort loadTrainingTypePort;
 	private final UpdateTrainerWorkloadPort updateTrainerWorkloadPort;
-
-	public TrainingService(UpdateTrainingPort updateTrainingPort, LoadTrainingPort loadTrainingPort,
-	        TrainingFactory trainingFactory, LoadTraineePort loadTraineePort, LoadTrainerPort loadTrainerPort,
-	        UpdateTraineePort updateTraineePort, LoadTrainingTypePort loadTrainingTypePort,
-	        UpdateTrainerWorkloadPort updateTrainerWorkloadPort) {
-		this.updateTrainingPort = updateTrainingPort;
-		this.loadTrainingPort = loadTrainingPort;
-		this.trainingFactory = trainingFactory;
-		this.loadTraineePort = loadTraineePort;
-		this.loadTrainerPort = loadTrainerPort;
-		this.updateTraineePort = updateTraineePort;
-		this.loadTrainingTypePort = loadTrainingTypePort;
-		this.updateTrainerWorkloadPort = updateTrainerWorkloadPort;
-	}
 
 	@Transactional
 	@Override
@@ -175,7 +164,7 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 		updateTrainingPort.save(training);
 
 		// Send trainer workload to secondary service
-		updateTrainerWorkloadPort.sendTrainerWorkload(training, "ADD");
+		updateTrainerWorkloadPort.sendTrainerWorkload(training, ActionType.ADD);
 
 		logger.info("Transaction ID: {} - Successfully created training: {}", transactionId, command.getTrainingName());
 	}
@@ -195,7 +184,7 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 	}
 
 	private void deleteTrainingAndUpdateWorkload(Training training, UUID trainingId, String transactionId) {
-		updateTrainerWorkloadPort.sendTrainerWorkload(training, "DELETE");
+		updateTrainerWorkloadPort.sendTrainerWorkload(training, ActionType.DELETE);
 		updateTrainingPort.deleteById(trainingId);
 		logger.info("Transaction ID: {} - Deleted training with ID: {}", transactionId, trainingId);
 	}

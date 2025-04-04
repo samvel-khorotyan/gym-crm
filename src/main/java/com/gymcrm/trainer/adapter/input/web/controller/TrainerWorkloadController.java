@@ -13,8 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Api(tags = "Trainer Workload Management")
 @RequiredArgsConstructor
+@Api(tags = "Trainer Workload Management")
 public class TrainerWorkloadController {
 	private static final Logger logger = LoggerFactory.getLogger(TrainerWorkloadController.class);
 

@@ -1,6 +1,7 @@
 package com.gymcrm.configuration.security.auth;
 
 import com.gymcrm.configuration.security.protection.BruteForceProtectionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
@@ -13,18 +14,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class CustomAuthenticationProvider implements AuthenticationProvider {
-
 	private final UserDetailsService userDetailsService;
 	private final PasswordEncoder passwordEncoder;
 	private final BruteForceProtectionService bruteForceProtectionService;
-
-	public CustomAuthenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder,
-	        BruteForceProtectionService bruteForceProtectionService) {
-		this.userDetailsService = userDetailsService;
-		this.passwordEncoder = passwordEncoder;
-		this.bruteForceProtectionService = bruteForceProtectionService;
-	}
 
 	@Override
 	public Authentication authenticate(Authentication authentication) throws AuthenticationException {

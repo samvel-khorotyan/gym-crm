@@ -6,6 +6,7 @@ import com.gymcrm.training.application.port.input.UpdateTrainingUseCase;
 import io.swagger.annotations.*;
 import java.util.UUID;
 import javax.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -14,18 +15,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequiredArgsConstructor
 @Api(tags = "Training Management")
 public class TrainingController {
 	private static final Logger logger = LoggerFactory.getLogger(TrainingController.class);
 
 	private final TrainingCreationUseCase trainingCreationUseCase;
 	private final UpdateTrainingUseCase updateTrainingUseCase;
-
-	public TrainingController(TrainingCreationUseCase trainingCreationUseCase,
-	        UpdateTrainingUseCase updateTrainingUseCase) {
-		this.trainingCreationUseCase = trainingCreationUseCase;
-		this.updateTrainingUseCase = updateTrainingUseCase;
-	}
 
 	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/users/me/trainings")
