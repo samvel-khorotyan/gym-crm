@@ -24,8 +24,8 @@ import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
 import org.springframework.util.ErrorHandler;
 
-@Configuration
 @EnableJms
+@Configuration
 public class JmsConfig {
 	private static final Logger log = LoggerFactory.getLogger(JmsConfig.class);
 

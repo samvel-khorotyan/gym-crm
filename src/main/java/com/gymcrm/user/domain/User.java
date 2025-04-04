@@ -9,10 +9,10 @@ import org.hibernate.annotations.Type;
 
 @Getter
 @Setter
+@Entity
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
 @Table(name = "user")
 public class User {
 	@Id
