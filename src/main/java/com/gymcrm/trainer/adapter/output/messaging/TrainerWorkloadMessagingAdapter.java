@@ -7,18 +7,20 @@ import com.gymcrm.trainer.adapter.output.queue.message.TrainerWorkloadMessage;
 import com.gymcrm.trainer.adapter.output.queue.message.TrainerWorkloadResponseMessage;
 import com.gymcrm.trainer.application.port.output.LoadTrainerWorkloadPort;
 import com.gymcrm.trainer.application.port.output.ReceiveTrainerWorkloadResponsePort;
+import com.gymcrm.trainer.application.port.output.ResponseCleanupPort;
 import com.gymcrm.trainer.application.port.output.UpdateTrainerWorkloadPort;
 import com.gymcrm.trainer.domain.ActionType;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.domain.Training;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -31,8 +33,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TrainerWorkloadMessagingAdapter
         implements
-            UpdateTrainerWorkloadPort,
+            ResponseCleanupPort,
             LoadTrainerWorkloadPort,
+            UpdateTrainerWorkloadPort,
             ReceiveTrainerWorkloadResponsePort {
 	private static final String TRAINER_WORKLOAD_SERVICE = "trainerWorkloadService";
 	private static final int RESPONSE_TIMEOUT_SECONDS = 10;
@@ -51,7 +54,6 @@ public class TrainerWorkloadMessagingAdapter
 	private final JmsTemplate jmsTemplate;
 	private final JmsMetrics jmsMetrics;
 
-	@Getter
 	private final ConcurrentHashMap<String, CompletableFuture<TrainerWorkloadResponseMessage>> pendingResponses = new ConcurrentHashMap<>();
 
 	@Override
@@ -108,6 +110,31 @@ public class TrainerWorkloadMessagingAdapter
 		} else {
 			log.warn("Transaction ID: {} - " + LOG_UNKNOWN_TRANSACTION, transactionId, transactionId);
 		}
+	}
+
+	@Override
+	public int cleanupExpiredResponses() {
+		if (pendingResponses.isEmpty()) {
+			log.debug("No pending responses to clean up");
+			return 0;
+		}
+
+		int expiredCount = 0;
+		for (Iterator<Map.Entry<String, CompletableFuture<TrainerWorkloadResponseMessage>>> it = pendingResponses
+		        .entrySet().iterator(); it.hasNext();) {
+
+			Map.Entry<String, CompletableFuture<TrainerWorkloadResponseMessage>> entry = it.next();
+			String transactionId = entry.getKey();
+			CompletableFuture<TrainerWorkloadResponseMessage> future = entry.getValue();
+
+			if (future.isDone() || future.isCancelled() || future.isCompletedExceptionally()) {
+				it.remove();
+				expiredCount++;
+				log.debug("Removed completed/cancelled future for transaction ID: {}", transactionId);
+			}
+		}
+
+		return expiredCount;
 	}
 
 	private void sendTrainerWorkloadFallback(Exception e) {
