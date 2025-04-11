@@ -1,7 +1,10 @@
 package com.gymcrm.training.application.port.input;
 
+import com.gymcrm.training.domain.Training;
 import java.util.UUID;
 
 public interface UpdateTrainingUseCase {
-	void deleteTraining(UUID trainingId);
+	Training update(UUID trainingId, UpdateTrainingCommand command);
+
+	void deleteById(UUID trainingId);
 }

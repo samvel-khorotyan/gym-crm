@@ -367,14 +367,11 @@ class TrainingServiceTest {
 	}
 
 	@Test
-	void deleteTraining_ShouldThrowException_WhenTrainingNotFound() {
-		// Arrange
+	void deleteByIdTraining_ShouldThrowException_WhenNotFound() {
 		UUID trainingId = UUID.randomUUID();
 		when(loadTrainingPort.findById(trainingId)).thenThrow(new RuntimeException("Training not found"));
 
-		// Act & Assert
-		RuntimeException exception = assertThrows(RuntimeException.class,
-		        () -> trainingService.deleteTraining(trainingId));
+		RuntimeException exception = assertThrows(RuntimeException.class, () -> trainingService.deleteById(trainingId));
 		assertEquals("Failed to delete training: Training not found", exception.getMessage());
 		verify(updateTrainingPort, never()).deleteById(any());
 		verify(updateTrainerWorkloadPort, never()).sendTrainerWorkload(any(), any());

@@ -10,14 +10,12 @@ import com.gymcrm.trainer.application.port.output.UpdateTrainerWorkloadPort;
 import com.gymcrm.trainer.domain.ActionType;
 import com.gymcrm.trainer.domain.Trainer;
 import com.gymcrm.training.application.factory.TrainingFactory;
-import com.gymcrm.training.application.port.input.CreateTrainingCommand;
-import com.gymcrm.training.application.port.input.LoadTrainingUseCase;
-import com.gymcrm.training.application.port.input.TrainingCreationUseCase;
-import com.gymcrm.training.application.port.input.UpdateTrainingUseCase;
+import com.gymcrm.training.application.port.input.*;
 import com.gymcrm.training.application.port.output.LoadTrainingPort;
 import com.gymcrm.training.application.port.output.UpdateTrainingPort;
 import com.gymcrm.training.domain.Training;
 import com.gymcrm.trainingtype.application.port.output.LoadTrainingTypePort;
+import com.gymcrm.trainingtype.domain.TrainingType;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,61 +26,95 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 @Service
 @RequiredArgsConstructor
 public class TrainingService implements TrainingCreationUseCase, LoadTrainingUseCase, UpdateTrainingUseCase {
 	private static final Logger logger = LoggerFactory.getLogger(TrainingService.class);
 
-	private final UpdateTrainingPort updateTrainingPort;
-	private final LoadTrainingPort loadTrainingPort;
 	private final TrainingFactory trainingFactory;
 	private final LoadTraineePort loadTraineePort;
 	private final LoadTrainerPort loadTrainerPort;
+	private final LoadTrainingPort loadTrainingPort;
 	private final UpdateTraineePort updateTraineePort;
+	private final UpdateTrainingPort updateTrainingPort;
 	private final LoadTrainingTypePort loadTrainingTypePort;
 	private final UpdateTrainerWorkloadPort updateTrainerWorkloadPort;
 
-	@Transactional
 	@Override
-	public void create(CreateTrainingCommand command) {
-		String transactionId = MDC.get("transactionId");
-		logger.info("Transaction ID: {} - Creating training with name: {}", transactionId, command.getTrainingName());
+	@Transactional
+	public Training create(CreateTrainingCommand command) {
+		String transactionId = getTransactionId();
+		logOperationStart("create", command.getTrainingName());
 
 		try {
 			prepareTrainingEntities(command);
-			createAndSaveTraining(command, transactionId);
+			return createAndSaveTraining(command, transactionId);
 		} catch (TraineeNotFoundException | TrainerNotFoundException e) {
-			logger.warn("Transaction ID: {} - Trainee or Trainer not found: {}", transactionId, e.getMessage(), e);
+			logEntityNotFound(transactionId, e);
 			throw e;
 		} catch (Exception e) {
-			logger.error("Transaction ID: {} - Failed to create training with name: {}, Reason: {}", transactionId,
-			        command.getTrainingName(), e.getMessage(), e);
+			logOperationError("create", command.getTrainingName(), e);
 			throw new RuntimeException("Failed to create training", e);
 		}
 	}
 
+	@Override
+	public Training findById(UUID id) {
+		String transactionId = getTransactionId();
+		logOperationStart("find", id.toString());
+
+		try {
+			Training training = loadTrainingPort.findById(id);
+			logger.info("Transaction ID: {} - Successfully retrieved training with ID: {}", transactionId, id);
+			return training;
+		} catch (Exception e) {
+			logOperationError("find", id.toString(), e);
+			throw new RuntimeException("Failed to get training", e);
+		}
+	}
+
+	@Override
 	@Transactional(rollbackFor = Exception.class)
-	public void deleteTraining(UUID trainingId) {
-		String transactionId = MDC.get("transactionId");
-		logger.info("Transaction ID: {} - Starting transaction to delete training with ID: {}", transactionId,
-		        trainingId);
+	public Training update(UUID trainingId, UpdateTrainingCommand command) {
+		String transactionId = getTransactionId();
+		logOperationStart("update", trainingId.toString());
+
+		try {
+			Training existingTraining = loadTrainingPort.findById(trainingId);
+			notifyWorkloadChangeBeforeUpdate(existingTraining);
+			updateTrainingDetails(existingTraining, command);
+			saveAndNotifyAfterUpdate(existingTraining);
+
+			logger.info("Transaction ID: {} - Successfully updated training with ID: {}", transactionId, trainingId);
+			return existingTraining;
+		} catch (Exception e) {
+			logOperationError("update", trainingId.toString(), e);
+			throw new RuntimeException("Failed to update training", e);
+		}
+	}
+
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void deleteById(UUID trainingId) {
+		String transactionId = getTransactionId();
+		logOperationStart("delete", trainingId.toString());
 
 		try {
 			Training training = loadTrainingPort.findById(trainingId);
-			logTrainingBeforeDeletion(training, transactionId);
+			logTrainingBeforeDeletion(training);
 
 			Trainee trainee = training.getTrainee();
 			Trainer trainer = training.getTrainer();
 
-			deleteTrainingAndUpdateWorkload(training, trainingId, transactionId);
-			updateTraineeTrainerRelationshipAfterDeletion(trainee, trainer, transactionId);
+			deleteTrainingAndUpdateWorkload(training, trainingId);
+			updateTraineeTrainerRelationshipAfterDeletion(trainee, trainer);
 
-			logger.info("Transaction ID: {} - Successfully completed transaction to delete training with ID: {}",
-			        transactionId, trainingId);
+			logger.info("Transaction ID: {} - Successfully completed deletion of training with ID: {}", transactionId,
+			        trainingId);
 		} catch (Exception e) {
-			logger.error("Transaction ID: {} - Transaction rolled back for training with ID: {}, Reason: {}",
-			        transactionId, trainingId, e.getMessage(), e);
+			logOperationError("delete", trainingId.toString(), e);
 			throw new RuntimeException("Failed to delete training: " + e.getMessage(), e);
 		}
 	}
@@ -101,7 +133,7 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 	@Override
 	public List<Training> findTraineeTrainingsByCriteria(String username, LocalDate startDate, LocalDate endDate,
 	        String trainerName, String trainingType) {
-		String transactionId = MDC.get("transactionId");
+		String transactionId = getTransactionId();
 
 		logger.info(
 		        "Transaction ID: {} - Fetching trainings for trainee: {}, Criteria - StartDate: {}, EndDate: {}, TrainerName: {}, TrainingType: {}",
@@ -114,7 +146,7 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 			logSuccessfulFetch(transactionId, trainings.size(), "trainee", username);
 			return trainings;
 		} catch (TraineeNotFoundException e) {
-			logEntityNotFound(transactionId, "Trainee", e);
+			logEntityNotFound(transactionId, e);
 			throw e;
 		} catch (Exception e) {
 			logFetchError(transactionId, "trainee", username, e);
@@ -125,7 +157,7 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 	@Override
 	public List<Training> findTrainerTrainingsByCriteria(String username, LocalDate startDate, LocalDate endDate,
 	        String traineeName) {
-		String transactionId = MDC.get("transactionId");
+		String transactionId = getTransactionId();
 
 		logger.info(
 		        "Transaction ID: {} - Fetching trainings for trainer: {}, Criteria - StartDate: {}, EndDate: {}, TraineeName: {}",
@@ -138,7 +170,7 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 			logSuccessfulFetch(transactionId, trainings.size(), "trainer", username);
 			return trainings;
 		} catch (TrainerNotFoundException e) {
-			logEntityNotFound(transactionId, "Trainer", e);
+			logEntityNotFound(transactionId, e);
 			throw e;
 		} catch (Exception e) {
 			logFetchError(transactionId, "trainer", username, e);
@@ -146,7 +178,27 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 		}
 	}
 
+	private String getTransactionId() {
+		return MDC.get("transactionId");
+	}
+
+	private void logOperationStart(String operation, String entityId) {
+		String transactionId = getTransactionId();
+		logger.info("Transaction ID: {} - Starting {} operation for entity: {}", transactionId, operation, entityId);
+	}
+
+	private void logOperationError(String operation, String entityId, Exception e) {
+		String transactionId = getTransactionId();
+		logger.error("Transaction ID: {} - Failed to {} entity: {}, Reason: {}", transactionId, operation, entityId,
+		        e.getMessage(), e);
+	}
+
 	private void prepareTrainingEntities(CreateTrainingCommand command) {
+		Assert.notNull(command, "Command cannot be null");
+		Assert.hasText(command.getTraineeUsername(), "Trainee username cannot be empty");
+		Assert.hasText(command.getTrainerUsername(), "Trainer username cannot be empty");
+		Assert.hasText(command.getTrainingName(), "Training name cannot be empty");
+
 		var trainee = loadTraineePort.findByUsername(command.getTraineeUsername());
 		command.setTrainee(trainee);
 
@@ -157,39 +209,118 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 		command.setTrainingType(trainingType);
 	}
 
-	private void createAndSaveTraining(CreateTrainingCommand command, String transactionId) {
+	private Training createAndSaveTraining(CreateTrainingCommand command, String transactionId) {
 		Training training = trainingFactory.createFrom(command);
 
 		updateTraineeTrainerRelationship(command.getTrainee(), command.getTrainer());
 		updateTrainingPort.save(training);
 
-		// Send trainer workload to secondary service
 		updateTrainerWorkloadPort.sendTrainerWorkload(training, ActionType.ADD);
 
 		logger.info("Transaction ID: {} - Successfully created training: {}", transactionId, command.getTrainingName());
+
+		return training;
+	}
+
+	private void notifyWorkloadChangeBeforeUpdate(Training training) {
+		updateTrainerWorkloadPort.sendTrainerWorkload(training, ActionType.DELETE);
+	}
+
+	private void updateTrainingDetails(Training existingTraining, UpdateTrainingCommand command) {
+		Assert.notNull(command, "Update command cannot be null");
+
+		updateTraineeIfNeeded(existingTraining, command);
+		updateTrainerIfNeeded(existingTraining, command);
+		updateTrainingTypeIfNeeded(existingTraining, command);
+		updateTrainingPropertiesIfNeeded(existingTraining, command);
+
+		// Update trainee-trainer relationship if needed
+		updateTraineeTrainerRelationshipIfNeeded(existingTraining);
+	}
+
+	private void updateTraineeIfNeeded(Training existingTraining, UpdateTrainingCommand command) {
+		if (command.getTraineeUsername() != null) {
+			Trainee trainee = loadTraineePort.findByUsername(command.getTraineeUsername());
+			existingTraining.setTrainee(trainee);
+			command.setTrainee(trainee);
+		}
+	}
+
+	private void updateTrainerIfNeeded(Training existingTraining, UpdateTrainingCommand command) {
+		if (command.getTrainerUsername() != null) {
+			Trainer trainer = loadTrainerPort.findByUsername(command.getTrainerUsername());
+			existingTraining.setTrainer(trainer);
+			command.setTrainer(trainer);
+		}
+	}
+
+	private void updateTrainingTypeIfNeeded(Training existingTraining, UpdateTrainingCommand command) {
+		if (command.getTrainingName() != null) {
+			TrainingType trainingType = loadTrainingTypePort.findByTrainingTypeName(command.getTrainingName());
+			existingTraining.setTrainingType(trainingType);
+			existingTraining.setTrainingName(command.getTrainingName());
+			command.setTrainingType(trainingType);
+		}
+	}
+
+	private void updateTrainingPropertiesIfNeeded(Training existingTraining, UpdateTrainingCommand command) {
+		if (command.getTrainingDate() != null) {
+			existingTraining.setTrainingDate(command.getTrainingDate());
+		}
+
+		if (command.getTrainingDuration() != null) {
+			existingTraining.setTrainingDuration(command.getTrainingDuration());
+		}
+	}
+
+	private void saveAndNotifyAfterUpdate(Training training) {
+		updateTrainingPort.save(training);
+		updateTrainerWorkloadPort.sendTrainerWorkload(training, ActionType.UPDATE);
+	}
+
+	private void updateTraineeTrainerRelationshipIfNeeded(Training training) {
+		Trainee trainee = training.getTrainee();
+		Trainer trainer = training.getTrainer();
+
+		// Check if trainee already has this trainer
+		boolean trainerExists = trainee.getTrainers() != null
+		        && trainee.getTrainers().stream().anyMatch(t -> t.getId().equals(trainer.getId()));
+
+		if (!trainerExists) {
+			ensureTraineeHasTrainersList(trainee);
+			trainee.getTrainers().add(trainer);
+			updateTraineePort.save(trainee);
+		}
 	}
 
 	private void updateTraineeTrainerRelationship(Trainee trainee, Trainer trainer) {
-		if (trainee.getTrainers() == null) {
-			trainee.setTrainers(new ArrayList<>());
-		}
+		ensureTraineeHasTrainersList(trainee);
 		trainee.getTrainers().add(trainer);
 		updateTraineePort.save(trainee);
 	}
 
-	private void logTrainingBeforeDeletion(Training training, String transactionId) {
+	private void ensureTraineeHasTrainersList(Trainee trainee) {
+		if (trainee.getTrainers() == null) {
+			trainee.setTrainers(new ArrayList<>());
+		}
+	}
+
+	private void logTrainingBeforeDeletion(Training training) {
+		String transactionId = getTransactionId();
 		logger.info("Transaction ID: {} - Training details before deletion: ID={}, Name={}, Trainee={}, Trainer={}",
 		        transactionId, training.getId(), training.getTrainingName(),
 		        training.getTrainee().getUser().getUsername(), training.getTrainer().getUser().getUsername());
 	}
 
-	private void deleteTrainingAndUpdateWorkload(Training training, UUID trainingId, String transactionId) {
+	private void deleteTrainingAndUpdateWorkload(Training training, UUID trainingId) {
+		String transactionId = getTransactionId();
 		updateTrainerWorkloadPort.sendTrainerWorkload(training, ActionType.DELETE);
 		updateTrainingPort.deleteById(trainingId);
 		logger.info("Transaction ID: {} - Deleted training with ID: {}", transactionId, trainingId);
 	}
 
-	private void updateTraineeTrainerRelationshipAfterDeletion(Trainee trainee, Trainer trainer, String transactionId) {
+	private void updateTraineeTrainerRelationshipAfterDeletion(Trainee trainee, Trainer trainer) {
+		String transactionId = getTransactionId();
 		// Check if there are other trainings between this trainee and trainer
 		boolean hasOtherTrainings = loadTrainingPort.existsByTraineeAndTrainer(trainee.getId(), trainer.getId());
 
@@ -209,8 +340,8 @@ public class TrainingService implements TrainingCreationUseCase, LoadTrainingUse
 		        entityType, username);
 	}
 
-	private void logEntityNotFound(String transactionId, String entityType, Exception e) {
-		logger.warn("Transaction ID: {} - {} not found: {}", transactionId, entityType, e.getMessage(), e);
+	private void logEntityNotFound(String transactionId, Exception e) {
+		logger.warn("Transaction ID: {} - Entity not found: {}", transactionId, e.getMessage(), e);
 	}
 
 	private void logFetchError(String transactionId, String entityType, String username, Exception e) {
