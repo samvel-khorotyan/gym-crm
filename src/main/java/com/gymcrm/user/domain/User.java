@@ -11,6 +11,7 @@ import org.hibernate.annotations.Type;
 @Setter
 @Entity
 @ToString
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "user")

@@ -1,5 +1,6 @@
 package com.gymcrm.user.application;
 
+import com.gymcrm.common.exception.InvalidPasswordException;
 import com.gymcrm.common.exception.UnauthorizedException;
 import com.gymcrm.user.application.exception.UserNotFoundException;
 import com.gymcrm.user.application.factory.UserFactory;
@@ -80,14 +81,18 @@ public class UserService implements UserCreationUseCase, LoadUserUseCase, UserUp
 		try {
 			User user = loadUserPort.findByUsername(command.getUsername());
 
-			passwordEncoder.matches(command.getOldPassword(), user.getPassword());
+			if (!passwordEncoder.matches(command.getOldPassword(), user.getPassword())) {
+				logger.warn("Transaction ID: {} - Invalid old password for user: {}", transactionId,
+				        command.getUsername());
+				throw new InvalidPasswordException("Current password is incorrect");
+			}
 
 			user.setPassword(passwordEncoder.encode(command.getNewPassword()));
 			updateUserPort.save(user);
 
 			logger.info("Transaction ID: {} - Successfully updated password for user: {}", transactionId,
 			        command.getUsername());
-		} catch (UnauthorizedException | UserNotFoundException e) {
+		} catch (UnauthorizedException | UserNotFoundException | InvalidPasswordException e) {
 			logger.warn("Transaction ID: {} - Failed to update password for user: {}, Reason: {}", transactionId,
 			        command.getUsername(), e.getMessage());
 			throw e;
