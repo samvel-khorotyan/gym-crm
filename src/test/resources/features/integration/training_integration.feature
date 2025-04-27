@@ -26,7 +26,7 @@ Feature: Training Management Integration Tests
       | trainingName    | Cardio      |
       | trainingDate    | 2023-12-15  |
       | trainingDuration| 60          |
-    Then the response status code should be 201
+    Then the training response status code should be 201
     And the trainer workload service should be notified about the new training
     And the trainer "trainer.int" workload should be increased by 60 minutes
 
@@ -40,7 +40,7 @@ Feature: Training Management Integration Tests
     And the user is authenticated with role "ADMIN"
     When the user sends a request to update the training with the following details:
       | trainingDuration| 120         |
-    Then the response status code should be 200
+    Then the training response status code should be 200
     And the trainer workload service should be notified about the updated training
     And the trainer "trainer.int" workload should be updated to 120 minutes
 
@@ -53,7 +53,7 @@ Feature: Training Management Integration Tests
       | trainingDuration| 45          |
     And the user is authenticated with role "ADMIN"
     When the user sends a request to delete the training
-    Then the response status code should be 204
+    Then the training response status code should be 204
     And the trainer workload service should be notified about the deleted training
     And the trainer "trainer.int" workload should be decreased by 45 minutes
 
@@ -67,7 +67,7 @@ Feature: Training Management Integration Tests
       | trainingName    | Cardio      |
       | trainingDate    | 2023-12-15  |
       | trainingDuration| 60          |
-    Then the response status code should be 201
+    Then the training response status code should be 201
     And the trainee "new.trainee" should be assigned to trainer "new.trainer"
 
   Scenario: Training deletion removes trainee-trainer relationship when no more trainings exist
@@ -75,5 +75,5 @@ Feature: Training Management Integration Tests
     And the trainee "single.trainee" is assigned to trainer "single.trainer" with only one training
     And the user is authenticated with role "ADMIN"
     When the user sends a request to delete the training between "single.trainee" and "single.trainer"
-    Then the response status code should be 204
+    Then the training response status code should be 204
     And the trainee "single.trainee" should no longer be assigned to trainer "single.trainer"

@@ -36,6 +36,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,14 +58,16 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
+@Transactional
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("testing")
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = CucumberSpringConfiguration.class)
-@Transactional // Ավտոմատ rollback յուրաքանչյուր թեստից հետո
 public class TrainingComponentTest {
 	private static final Logger logger = LoggerFactory.getLogger(TrainingComponentTest.class);
+	private static final String TRAINING_ENDPOINT = "/trainings/";
+	private static final String USER_TRAININGS_ENDPOINT = "/users/me/trainings";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -128,8 +131,9 @@ public class TrainingComponentTest {
 			entityManager.createQuery("DELETE FROM User").executeUpdate();
 			entityManager.flush();
 			entityManager.clear();
+			logger.info("Database cleaned up successfully");
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("Error cleaning up database", e);
 		}
 	}
 
@@ -137,51 +141,7 @@ public class TrainingComponentTest {
 	public void theSystemHasTheFollowingUsers(DataTable dataTable) {
 		List<Map<String, String>> rows = dataTable.asMaps();
 		for (Map<String, String> row : rows) {
-			String username = row.get("username");
-			String firstName = row.get("firstName");
-			String lastName = row.get("lastName");
-			UserType userType = UserType.valueOf(row.get("userType"));
-
-			try {
-				try {
-					loadUserPort.findByUsername(username);
-					logger.info("User already exists: {}", username);
-					return;
-				} catch (Exception e) {
-					logger.info("User not found, creating new: {}", username);
-				}
-
-				User user = new User();
-				user.setId(UUID.randomUUID());
-				user.setUsername(username);
-				user.setFirstName(firstName);
-				user.setLastName(lastName);
-				user.setUserType(userType);
-				user.setPassword("password");
-				user.setIsActive(true);
-
-				User savedUser = updateUserPort.save(user);
-				logger.info("Created user: {} with ID: {}", username, savedUser.getId());
-
-				if (userType == UserType.TRAINEE) {
-					Trainee trainee = new Trainee();
-					trainee.setId(UUID.randomUUID());
-					trainee.setUser(savedUser);
-					trainee.setTrainers(new ArrayList<>());
-					updateTraineePort.save(trainee);
-					logger.info("Created trainee for user: {}", username);
-				} else if (userType == UserType.TRAINER) {
-					Trainer trainer = new Trainer();
-					trainer.setId(UUID.randomUUID());
-					trainer.setUser(savedUser);
-					trainer.setSpecialization("General Fitness");
-					updateTrainerPort.save(trainer);
-					logger.info("Created trainer for user: {}", username);
-				}
-			} catch (Exception e) {
-				logger.error("Failed to create user: {}", username, e);
-				throw new RuntimeException("Failed to create user: " + username, e);
-			}
+			createUser(row);
 		}
 	}
 
@@ -189,79 +149,33 @@ public class TrainingComponentTest {
 	public void theSystemHasTheFollowingTrainingTypes(DataTable dataTable) {
 		List<Map<String, String>> rows = dataTable.asMaps();
 		for (Map<String, String> row : rows) {
-			String name = row.get("trainingTypeName");
-
-			try {
-				List<TrainingType> allTypes = loadTrainingTypeUseCase.loadAll();
-				if (allTypes.stream().anyMatch(type -> type.getTrainingTypeName().equals(name))) {
-					logger.info("Training type already exists: {}", name);
-					return;
-				}
-
-				TrainingType type = new TrainingType();
-				type.setId(UUID.randomUUID());
-				type.setTrainingTypeName(name);
-				updateTrainingTypePort.save(type);
-				logger.info("Created training type: {}", name);
-			} catch (Exception e) {
-				logger.error("Failed to create training type: {}", name, e);
-				throw new RuntimeException("Failed to create training type: " + name, e);
-			}
+			createTrainingType(row.get("trainingTypeName"));
 		}
 	}
 
 	@Given("the trainee {string} is assigned to trainer {string}")
 	public void theTraineeIsAssignedToTrainer(String traineeUsername, String trainerUsername) {
-		try {
-			Trainee trainee = loadTraineeUseCase.loadByUsername(traineeUsername);
-			Trainer trainer = loadTrainerUseCase.loadByUsername(trainerUsername);
-
-			if (trainee.getTrainers() == null) {
-				trainee.setTrainers(new ArrayList<>());
-			}
-
-			if (!trainee.getTrainers().contains(trainer)) {
-				trainee.getTrainers().add(trainer);
-				updateTraineePort.save(trainee);
-				logger.info("Assigned trainer {} to trainee {}", trainerUsername, traineeUsername);
-			} else {
-				logger.info("Trainer {} is already assigned to trainee {}", trainerUsername, traineeUsername);
-			}
-		} catch (Exception e) {
-			logger.error("Failed to assign trainer to trainee", e);
-			throw new RuntimeException("Failed to assign trainer to trainee", e);
-		}
+		assignTrainerToTrainee(traineeUsername, trainerUsername);
 	}
 
 	@Given("the user is authenticated with role {string}")
 	public void theUserIsAuthenticatedWithRole(String role) {
 		currentUserRole = role;
-		logger.info("Set user role to: {}", role);
+		logger.info("User role set to: {}", role);
 	}
 
 	@When("the user sends a request to create a training with the following details:")
 	public void theUserSendsARequestToCreateATrainingWithTheFollowingDetails(DataTable dataTable) throws Exception {
 		Map<String, String> row = dataTable.asMap();
-
-		TrainingCreateRequest request = new TrainingCreateRequest(row.get("traineeUsername"),
-		        row.get("trainerUsername"), row.get("trainingName"), LocalDate.parse(row.get("trainingDate")),
-		        Integer.parseInt(row.get("trainingDuration")));
+		TrainingCreateRequest request = createTrainingRequest(row);
 
 		logger.info("Sending request to create training: {}", objectMapper.writeValueAsString(request));
 
 		resultActions = mockMvc
-		        .perform(MockMvcRequestBuilders.post("/users/me/trainings").contentType(MediaType.APPLICATION_JSON)
+		        .perform(MockMvcRequestBuilders.post(USER_TRAININGS_ENDPOINT).contentType(MediaType.APPLICATION_JSON)
 		                .content(objectMapper.writeValueAsString(request)).with(getSecurityContext()));
 
-		if (resultActions.andReturn().getResponse().getStatus() == 201) {
-			String responseBody = resultActions.andReturn().getResponse().getContentAsString();
-			Pattern pattern = Pattern.compile("\"id\":\"([^\"]+)\"");
-			Matcher matcher = pattern.matcher(responseBody);
-			if (matcher.find()) {
-				currentTrainingId = UUID.fromString(matcher.group(1));
-				logger.info("Created training with ID: {}", currentTrainingId);
-			}
-		}
+		extractTrainingIdFromResponse();
 	}
 
 	@Then("the response status code should be {int}")
@@ -291,71 +205,27 @@ public class TrainingComponentTest {
 	@Given("the system has a training with the following details:")
 	public void theSystemHasATrainingWithTheFollowingDetails(DataTable dataTable) {
 		Map<String, String> row = dataTable.asMap();
-
-		String traineeUsername = row.get("traineeUsername");
-		String trainerUsername = row.get("trainerUsername");
-		String trainingName = row.get("trainingName");
-		LocalDate trainingDate = LocalDate.parse(row.get("trainingDate"));
-		int trainingDuration = Integer.parseInt(row.get("trainingDuration"));
-
-		try {
-			Trainee trainee = loadTraineeUseCase.loadByUsername(traineeUsername);
-			Trainer trainer = loadTrainerUseCase.loadByUsername(trainerUsername);
-
-			TrainingType trainingType = loadTrainingTypeUseCase.loadAll().stream()
-			        .filter(type -> type.getTrainingTypeName().equals(trainingName)).findFirst().orElseGet(() -> {
-				        TrainingType newType = new TrainingType();
-				        newType.setId(UUID.randomUUID());
-				        newType.setTrainingTypeName(trainingName);
-				        return updateTrainingTypePort.save(newType);
-			        });
-
-			CreateTrainingCommand command = new CreateTrainingCommand(traineeUsername, trainerUsername, trainee,
-			        trainer, trainingName, trainingType, trainingDate, trainingDuration);
-
-			Training createdTraining = trainingCreationUseCase.create(command);
-			currentTrainingId = createdTraining.getId();
-			logger.info("Created training with ID: {}", currentTrainingId);
-		} catch (Exception e) {
-			logger.error("Failed to create training for scenario", e);
-			throw new RuntimeException("Failed to create training for scenario", e);
-		}
+		createTrainingInSystem(row);
 	}
 
 	@When("the user sends a request to get the training by ID")
 	public void theUserSendsARequestToGetTheTrainingByID() throws Exception {
 		logger.info("Sending request to get training with ID: {}, with role: {}", currentTrainingId, currentUserRole);
 
-		resultActions = mockMvc.perform(MockMvcRequestBuilders.get("/trainings/" + currentTrainingId)
+		resultActions = mockMvc.perform(MockMvcRequestBuilders.get(TRAINING_ENDPOINT + currentTrainingId)
 		        .contentType(MediaType.APPLICATION_JSON).with(getSecurityContext()));
 	}
 
 	@When("the user sends a request to update the training with the following details:")
 	public void theUserSendsARequestToUpdateTheTrainingWithTheFollowingDetails(DataTable dataTable) throws Exception {
 		Map<String, String> row = dataTable.asMap();
-
-		TrainingUpdateRequest request = new TrainingUpdateRequest();
-		if (row.containsKey("traineeUsername")) {
-			request.setTraineeUsername(row.get("traineeUsername"));
-		}
-		if (row.containsKey("trainerUsername")) {
-			request.setTrainerUsername(row.get("trainerUsername"));
-		}
-		if (row.containsKey("trainingName")) {
-			request.setTrainingName(row.get("trainingName"));
-		}
-		if (row.containsKey("trainingDate")) {
-			request.setTrainingDate(LocalDate.parse(row.get("trainingDate")));
-		}
-		if (row.containsKey("trainingDuration")) {
-			request.setTrainingDuration(Integer.parseInt(row.get("trainingDuration")));
-		}
+		TrainingUpdateRequest request = createTrainingUpdateRequest(row);
 
 		logger.info("Sending request to update training with ID: {}", currentTrainingId);
 
-		resultActions = mockMvc.perform(
-		        MockMvcRequestBuilders.put("/trainings/" + currentTrainingId).contentType(MediaType.APPLICATION_JSON)
-		                .content(objectMapper.writeValueAsString(request)).with(getSecurityContext()));
+		resultActions = mockMvc.perform(MockMvcRequestBuilders.put(TRAINING_ENDPOINT + currentTrainingId)
+		        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request))
+		        .with(getSecurityContext()));
 	}
 
 	@And("the response should contain a training with date {string}")
@@ -374,12 +244,183 @@ public class TrainingComponentTest {
 	public void theUserSendsARequestToDeleteTheTraining() throws Exception {
 		logger.info("Sending request to delete training with ID: {}", currentTrainingId);
 
-		resultActions = mockMvc
-		        .perform(MockMvcRequestBuilders.delete("/trainings/" + currentTrainingId).with(getSecurityContext()));
+		resultActions = mockMvc.perform(
+		        MockMvcRequestBuilders.delete(TRAINING_ENDPOINT + currentTrainingId).with(getSecurityContext()));
 	}
 
 	@And("the training should no longer exist in the system")
 	public void theTrainingShouldNoLongerExistInTheSystem() {
+		verifyTrainingDoesNotExist();
+	}
+
+	private void createUser(Map<String, String> userData) {
+		String username = userData.get("username");
+		String firstName = userData.get("firstName");
+		String lastName = userData.get("lastName");
+		UserType userType = UserType.valueOf(userData.get("userType"));
+
+		try {
+			try {
+				loadUserPort.findByUsername(username);
+				logger.info("User already exists: {}", username);
+				return;
+			} catch (Exception e) {
+				logger.info("User not found, creating new: {}", username);
+			}
+
+			User user = new User();
+			user.setId(UUID.randomUUID());
+			user.setUsername(username);
+			user.setFirstName(firstName);
+			user.setLastName(lastName);
+			user.setUserType(userType);
+			user.setPassword("password");
+			user.setIsActive(true);
+
+			User savedUser = updateUserPort.save(user);
+			logger.info("Created user: {} with ID: {}", username, savedUser.getId());
+
+			if (userType == UserType.TRAINEE) {
+				createTrainee(savedUser);
+			} else if (userType == UserType.TRAINER) {
+				createTrainer(savedUser);
+			}
+		} catch (Exception e) {
+			logger.error("Failed to create user: {}", username, e);
+			throw new RuntimeException("Failed to create user: " + username, e);
+		}
+	}
+
+	private void createTrainee(User user) {
+		Trainee trainee = new Trainee();
+		trainee.setId(UUID.randomUUID());
+		trainee.setUser(user);
+		trainee.setTrainers(new ArrayList<>());
+		updateTraineePort.save(trainee);
+		logger.info("Created trainee for user: {}", user.getUsername());
+	}
+
+	private void createTrainer(User user) {
+		Trainer trainer = new Trainer();
+		trainer.setId(UUID.randomUUID());
+		trainer.setUser(user);
+		trainer.setSpecialization("General Fitness");
+		updateTrainerPort.save(trainer);
+		logger.info("Created trainer for user: {}", user.getUsername());
+	}
+
+	private void createTrainingType(String name) {
+		try {
+			List<TrainingType> allTypes = loadTrainingTypeUseCase.loadAll();
+			if (allTypes.stream().anyMatch(type -> type.getTrainingTypeName().equals(name))) {
+				logger.info("Training type already exists: {}", name);
+				return;
+			}
+
+			TrainingType type = new TrainingType();
+			type.setId(UUID.randomUUID());
+			type.setTrainingTypeName(name);
+			updateTrainingTypePort.save(type);
+			logger.info("Created training type: {}", name);
+		} catch (Exception e) {
+			logger.error("Failed to create training type: {}", name, e);
+			throw new RuntimeException("Failed to create training type: " + name, e);
+		}
+	}
+
+	private void assignTrainerToTrainee(String traineeUsername, String trainerUsername) {
+		try {
+			Trainee trainee = loadTraineeUseCase.loadByUsername(traineeUsername);
+			Trainer trainer = loadTrainerUseCase.loadByUsername(trainerUsername);
+
+			if (trainee.getTrainers() == null) {
+				trainee.setTrainers(new ArrayList<>());
+			}
+
+			if (!trainee.getTrainers().contains(trainer)) {
+				trainee.getTrainers().add(trainer);
+				updateTraineePort.save(trainee);
+				logger.info("Assigned trainer {} to trainee {}", trainerUsername, traineeUsername);
+			} else {
+				logger.info("Trainer {} is already assigned to trainee {}", trainerUsername, traineeUsername);
+			}
+		} catch (Exception e) {
+			logger.error("Failed to assign trainer to trainee", e);
+			throw new RuntimeException("Failed to assign trainer to trainee", e);
+		}
+	}
+
+	private TrainingCreateRequest createTrainingRequest(Map<String, String> data) {
+		return new TrainingCreateRequest(data.get("traineeUsername"), data.get("trainerUsername"),
+		        data.get("trainingName"), LocalDate.parse(data.get("trainingDate")),
+		        Integer.parseInt(data.get("trainingDuration")));
+	}
+
+	private TrainingUpdateRequest createTrainingUpdateRequest(Map<String, String> data) {
+		TrainingUpdateRequest request = new TrainingUpdateRequest();
+
+		Optional.ofNullable(data.get("traineeUsername")).ifPresent(request::setTraineeUsername);
+		Optional.ofNullable(data.get("trainerUsername")).ifPresent(request::setTrainerUsername);
+		Optional.ofNullable(data.get("trainingName")).ifPresent(request::setTrainingName);
+		Optional.ofNullable(data.get("trainingDate")).ifPresent(date -> request.setTrainingDate(LocalDate.parse(date)));
+		Optional.ofNullable(data.get("trainingDuration"))
+		        .ifPresent(duration -> request.setTrainingDuration(Integer.parseInt(duration)));
+
+		return request;
+	}
+
+	private void createTrainingInSystem(Map<String, String> data) {
+		String traineeUsername = data.get("traineeUsername");
+		String trainerUsername = data.get("trainerUsername");
+		String trainingName = data.get("trainingName");
+		LocalDate trainingDate = LocalDate.parse(data.get("trainingDate"));
+		int trainingDuration = Integer.parseInt(data.get("trainingDuration"));
+
+		try {
+			Trainee trainee = loadTraineeUseCase.loadByUsername(traineeUsername);
+			Trainer trainer = loadTrainerUseCase.loadByUsername(trainerUsername);
+
+			TrainingType trainingType = findOrCreateTrainingType(trainingName);
+
+			CreateTrainingCommand command = new CreateTrainingCommand(traineeUsername, trainerUsername, trainee,
+			        trainer, trainingName, trainingType, trainingDate, trainingDuration);
+
+			Training createdTraining = trainingCreationUseCase.create(command);
+			currentTrainingId = createdTraining.getId();
+			logger.info("Created training with ID: {}", currentTrainingId);
+		} catch (Exception e) {
+			logger.error("Failed to create training for scenario", e);
+			throw new RuntimeException("Failed to create training for scenario", e);
+		}
+	}
+
+	private TrainingType findOrCreateTrainingType(String trainingName) {
+		return loadTrainingTypeUseCase.loadAll().stream()
+		        .filter(type -> type.getTrainingTypeName().equals(trainingName)).findFirst().orElseGet(() -> {
+			        TrainingType newType = new TrainingType();
+			        newType.setId(UUID.randomUUID());
+			        newType.setTrainingTypeName(trainingName);
+			        return updateTrainingTypePort.save(newType);
+		        });
+	}
+
+	private void extractTrainingIdFromResponse() {
+		try {
+			if (resultActions.andReturn().getResponse().getStatus() == 201) {
+				String responseBody = resultActions.andReturn().getResponse().getContentAsString();
+				Pattern pattern = Pattern.compile("\"id\":\"([^\"]+)\"");
+				Matcher matcher = pattern.matcher(responseBody);
+				if (matcher.find()) {
+					currentTrainingId = UUID.fromString(matcher.group(1));
+					logger.info("Extracted training ID: {}", currentTrainingId);
+				}
+			}
+		} catch (Exception e) {
+			logger.error("Failed to extract training ID from response", e);
+		}
+	}
+
+	private void verifyTrainingDoesNotExist() {
 		try {
 			loadTrainingUseCase.findById(currentTrainingId);
 			throw new AssertionError("Training still exists in the system");
