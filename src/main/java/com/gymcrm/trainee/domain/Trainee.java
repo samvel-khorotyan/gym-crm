@@ -7,15 +7,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import javax.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.Type;
 
 @Setter
 @Getter
 @Entity
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "trainee")

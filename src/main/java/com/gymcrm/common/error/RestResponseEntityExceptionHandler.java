@@ -2,6 +2,7 @@ package com.gymcrm.common.error;
 
 import com.gymcrm.common.exception.*;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,12 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
 	protected ResponseEntity<ErrorsDetails> handleConflictException(Throwable ex, WebRequest request) {
 		ErrorsDetails errorDetails = new ErrorsDetails(ex.getMessage());
 		return new ResponseEntity<>(errorDetails, HttpStatus.CONFLICT);
+	}
+
+	@ExceptionHandler(InvalidPasswordException.class)
+	public ResponseEntity<Map<String, String>> handleInvalidPasswordException(InvalidPasswordException ex) {
+		Map<String, String> errorResponse = Map.of("error", "Bad Request", "message", ex.getMessage());
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
 	}
 
 	@Override

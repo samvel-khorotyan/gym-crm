@@ -11,6 +11,7 @@ import org.hibernate.annotations.Type;
 @Getter
 @Setter
 @Entity
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "trainer")

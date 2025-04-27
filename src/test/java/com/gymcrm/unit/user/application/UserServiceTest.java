@@ -3,6 +3,7 @@ package com.gymcrm.unit.user.application;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.gymcrm.common.exception.InvalidPasswordException;
 import com.gymcrm.user.application.UserService;
 import com.gymcrm.user.application.exception.UserNotFoundException;
 import com.gymcrm.user.application.factory.UserFactory;
@@ -101,7 +102,7 @@ class UserServiceTest {
 	}
 
 	@Test
-	void updatePasswordUnauthorized() {
+	void updatePasswordInvalidOldPassword() {
 		UpdatePasswordCommand command = new UpdatePasswordCommand("john.doe", "wrongPass", "newPass");
 		User user = new User();
 		user.setPassword("encodedOldPass");
@@ -109,8 +110,12 @@ class UserServiceTest {
 		when(loadUserPort.findByUsername("john.doe")).thenReturn(user);
 		when(passwordEncoder.matches("wrongPass", "encodedOldPass")).thenReturn(false);
 
-		assertDoesNotThrow(() -> userService.updatePassword(command));
-		verify(updateUserPort).save(user);
+		InvalidPasswordException exception = assertThrows(InvalidPasswordException.class,
+		        () -> userService.updatePassword(command));
+
+		assertEquals("Current password is incorrect", exception.getMessage());
+
+		verify(updateUserPort, never()).save(any(User.class));
 	}
 
 	@Test
