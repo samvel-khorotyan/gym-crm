@@ -10,6 +10,13 @@ services:
       MYSQL_DATABASE: gym_crm_dev
     ports:
       - "3307:3306" # Dev MySQL (mapped to port 3307)
+    networks:
+      - springboot_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pexample"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   gym_crm_stg_db:
     image: mysql:8.0
@@ -20,6 +27,8 @@ services:
       MYSQL_DATABASE: gym_crm_stg
     ports:
       - "3308:3306" # Staging MySQL (mapped to port 3308)
+    networks:
+      - springboot_network
 
   gym_crm_prod_db:
     image: mysql:8.0
@@ -30,6 +39,8 @@ services:
       MYSQL_DATABASE: gym_crm_prod
     ports:
       - "3309:3306" # Production MySQL (mapped to port 3309)
+    networks:
+      - springboot_network
 
   flyway:
     image: flyway/flyway:8.0.4
@@ -43,15 +54,25 @@ services:
     volumes:
       - ./db/migration/dev:/flyway/sql
     command: -connectRetries=10 migrate
+    networks:
+      - springboot_network
 
   cache:
     image: redis
     container_name: redis
     ports:
       - 6379:6379
+    networks:
+      - springboot_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   activemq:
     image: rmohr/activemq:5.15.9
+    container_name: activemq
     ports:
       - "61616:61616" # JMS
       - "8161:8161"   # Web Console
@@ -60,11 +81,42 @@ services:
       ACTIVEMQ_ADMIN_PASSWORD: admin
     volumes:
       - activemq-data:/opt/activemq/data
+    networks:
+      - springboot_network
+      - app_common_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8161"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gym-crm-app:
+    build: .
+    container_name: gym-crm-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gym_crm_dev_mysql:3306/gym_crm_dev
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=example
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://activemq:61616
+      - SPRING_ACTIVEMQ_USER=admin
+      - SPRING_ACTIVEMQ_PASSWORD=admin
+    depends_on:
+      - gym_crm_dev_db
+      - cache
+      - activemq
+    networks:
+      - springboot_network
+      - app_common_network
 
 volumes:
   activemq-data:
 
 networks:
-  default:
-    name: springboot_network
+  springboot_network:
     driver: bridge
+  app_common_network:
+    external: true
