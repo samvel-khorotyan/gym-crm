@@ -1,19 +1,11 @@
 # ---------- Build Stage ----------
-FROM eclipse-temurin:17-jdk-alpine AS build
+FROM maven:3.8-openjdk-17-slim AS build
 
 WORKDIR /app
+COPY . .
 
-COPY mvnw .
-COPY .mvn .mvn
-COPY pom.xml .
-
-RUN chmod +x mvnw
-
-RUN ./mvnw dependency:go-offline -B
-
-COPY src src
-
-RUN ./mvnw clean package spring-boot:repackage -DskipTests
+RUN mvn clean package spring-boot:repackage -DskipTests \
+    -Dspring-boot.repackage.mainClass=com.gymcrm.GymCRMApplication
 
 # ---------- Runtime Stage ----------
 FROM eclipse-temurin:17-jre-alpine
@@ -22,20 +14,10 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
-# Disabled integrations
-ENV DB_URL=jdbc:mysql://disabled:3306/disabled
-ENV DB_USERNAME=disabled
-ENV DB_PASSWORD=disabled
-ENV SPRING_ACTIVEMQ_BROKER_URL=tcp://disabled:61616
-ENV SPRING_ACTIVEMQ_USER=disabled
-ENV SPRING_ACTIVEMQ_PASSWORD=disabled
-ENV EUREKA_CLIENT_ENABLED=false
+RUN ls -la app.jar && [ -s app.jar ]
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", \
-  "-Dspring.profiles.active=local", \
-  "-Dspring.datasource.url=jdbc:disabled", \
-  "-Dspring.flyway.enabled=false", \
-  "-Dspring.jpa.hibernate.ddl-auto=none", \
-  "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dspring.profiles.active=dev", "-jar", "app.jar"]
+
+CMD ["--spring.main.allow-bean-definition-overriding=true"]
