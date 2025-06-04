@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   gym_crm_dev_db:
     image: mysql:8.0
@@ -9,7 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: gym_crm_dev
     ports:
-      - "3307:3306" # Dev MySQL (mapped to port 3307)
+      - "3307:3306" # Dev MySQL
     networks:
       - springboot_network
     healthcheck:
@@ -26,7 +24,7 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: gym_crm_stg
     ports:
-      - "3308:3306" # Staging MySQL (mapped to port 3308)
+      - "3308:3306" # Staging MySQL
     networks:
       - springboot_network
 
@@ -38,22 +36,24 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: gym_crm_prod
     ports:
-      - "3309:3306" # Production MySQL (mapped to port 3309)
+      - "3309:3306" # Production MySQL
     networks:
       - springboot_network
 
   flyway:
     image: flyway/flyway:8.0.4
+    container_name: gym-crm-flyway
     depends_on:
-      - gym_crm_dev_db
+      gym_crm_dev_db:
+        condition: service_healthy
     environment:
-      FLYWAY_URL: jdbc:mysql://gym_crm_dev_mysql:3306/gym_crm_dev
+      FLYWAY_URL: jdbc:mysql://gym_crm_dev_mysql:3306/gym_crm_dev?useSSL=false&allowPublicKeyRetrieval=true
       FLYWAY_USER: root
       FLYWAY_PASSWORD: example
-      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+      FLYWAY_CONNECT_RETRIES: 10
     volumes:
-      - ./db/migration/dev:/flyway/sql
-    command: -connectRetries=10 migrate
+      - ./src/main/resources/db/migration:/flyway/sql
+    command: migrate
     networks:
       - springboot_network
 
@@ -96,18 +96,24 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://gym_crm_dev_mysql:3306/gym_crm_dev
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gym_crm_dev_mysql:3306/gym_crm_dev?useSSL=false&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=example
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
       - SPRING_ACTIVEMQ_BROKER_URL=tcp://activemq:61616
       - SPRING_ACTIVEMQ_USER=admin
       - SPRING_ACTIVEMQ_PASSWORD=admin
+      - SPRING_REDIS_HOST=redis
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=none
+      - SPRING_JPA_PROPERTIES_HIBERNATE_VALIDATOR_APPLY_TO_DDL=false
+      - EUREKA_CLIENT_ENABLED=false
+      - JAVA_OPTS=-Dspring.profiles.active=dev -Djava.security.egd=file:/dev/./urandom
     depends_on:
-      - gym_crm_dev_db
-      - cache
-      - activemq
+      cache:
+        condition: service_healthy
+      activemq:
+        condition: service_healthy
+    restart: on-failure
     networks:
       - springboot_network
       - app_common_network
@@ -119,4 +125,4 @@ networks:
   springboot_network:
     driver: bridge
   app_common_network:
-    external: true
+    driver: bridge
