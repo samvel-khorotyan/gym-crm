@@ -8,12 +8,10 @@ COPY .mvn .mvn
 COPY pom.xml .
 
 RUN chmod +x mvnw
-
 RUN ./mvnw dependency:go-offline -B
 
 COPY src src
-
-RUN ./mvnw clean package spring-boot:repackage -DskipTests
+RUN ./mvnw clean package spring-boot:repackage -DskipTests -Dmaven.test.skip=true
 
 # ---------- Runtime Stage ----------
 FROM eclipse-temurin:17-jre-alpine
@@ -22,20 +20,10 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
-# Disabled integrations
-ENV DB_URL=jdbc:mysql://disabled:3306/disabled
-ENV DB_USERNAME=disabled
-ENV DB_PASSWORD=disabled
-ENV SPRING_ACTIVEMQ_BROKER_URL=tcp://disabled:61616
-ENV SPRING_ACTIVEMQ_USER=disabled
-ENV SPRING_ACTIVEMQ_PASSWORD=disabled
-ENV EUREKA_CLIENT_ENABLED=false
+# Basic tools (CA certificates for HTTPS connections)
+RUN apk add --no-cache ca-certificates
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", \
-  "-Dspring.profiles.active=local", \
-  "-Dspring.datasource.url=jdbc:disabled", \
-  "-Dspring.flyway.enabled=false", \
-  "-Dspring.jpa.hibernate.ddl-auto=none", \
-  "-jar", "app.jar"]
+# Simple entrypoint - Spring Boot will use environment variables
+ENTRYPOINT ["java", "-jar", "app.jar"]

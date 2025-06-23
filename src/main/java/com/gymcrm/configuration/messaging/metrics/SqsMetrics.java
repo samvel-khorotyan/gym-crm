@@ -9,24 +9,24 @@ import org.springframework.stereotype.Component;
 
 @Getter
 @Component
-public class JmsMetrics {
+public class SqsMetrics {
 	private final Counter messagesSentCounter;
 	private final Counter messagesReceivedCounter;
 	private final Counter messagesFailedCounter;
 	private final Timer messageProcessingTimer;
 
-	public JmsMetrics(MeterRegistry registry) {
-		this.messagesSentCounter = Counter.builder("jms.messages.sent").description("Number of JMS messages sent")
+	public SqsMetrics(MeterRegistry registry) {
+		this.messagesSentCounter = Counter.builder("sqs.messages.sent").description("Number of SQS messages sent")
 		        .register(registry);
 
-		this.messagesReceivedCounter = Counter.builder("jms.messages.received")
-		        .description("Number of JMS messages received").register(registry);
+		this.messagesReceivedCounter = Counter.builder("sqs.messages.received")
+		        .description("Number of SQS messages received").register(registry);
 
-		this.messagesFailedCounter = Counter.builder("jms.messages.failed")
-		        .description("Number of JMS messages that failed to process").register(registry);
+		this.messagesFailedCounter = Counter.builder("sqs.messages.failed")
+		        .description("Number of SQS messages that failed to process").register(registry);
 
-		this.messageProcessingTimer = Timer.builder("jms.messages.processing.time")
-		        .description("Time taken to process JMS messages").register(registry);
+		this.messageProcessingTimer = Timer.builder("sqs.messages.processing.time")
+		        .description("Time taken to process SQS messages").register(registry);
 	}
 
 	public void recordMessageSent() {

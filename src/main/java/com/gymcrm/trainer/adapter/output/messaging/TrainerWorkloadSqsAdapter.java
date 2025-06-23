@@ -1,7 +1,7 @@
 package com.gymcrm.trainer.adapter.output.messaging;
 
-import com.gymcrm.configuration.messaging.JmsConfig;
-import com.gymcrm.configuration.messaging.metrics.JmsMetrics;
+import com.gymcrm.configuration.messaging.metrics.SqsMetrics;
+import com.gymcrm.configuration.messaging.sqs.SqsMessageTemplate;
 import com.gymcrm.trainer.adapter.input.web.response.TrainerMonthlyWorkloadResponse;
 import com.gymcrm.trainer.adapter.output.queue.message.TrainerWorkloadMessage;
 import com.gymcrm.trainer.adapter.output.queue.message.TrainerWorkloadResponseMessage;
@@ -24,14 +24,12 @@ import java.util.concurrent.TimeoutException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
-import org.springframework.jms.JmsException;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class TrainerWorkloadMessagingAdapter
+public class TrainerWorkloadSqsAdapter
         implements
             ResponseCleanupPort,
             LoadTrainerWorkloadPort,
@@ -40,19 +38,8 @@ public class TrainerWorkloadMessagingAdapter
 	private static final String TRAINER_WORKLOAD_SERVICE = "trainerWorkloadService";
 	private static final int RESPONSE_TIMEOUT_SECONDS = 10;
 
-	private static final String LOG_SENDING_WORKLOAD = "Sending trainer workload message for trainer: {}, action: {}";
-	private static final String LOG_SENT_SUCCESSFULLY = "Successfully sent trainer workload message";
-	private static final String LOG_SEND_FAILED = "Failed to send trainer workload message: {}";
-	private static final String LOG_GETTING_WORKLOAD = "Getting monthly workload for trainer: {}, year: {}, month: {}";
-	private static final String LOG_RECEIVED_WORKLOAD = "Successfully received monthly workload for trainer: {}, summary duration: {}";
-	private static final String LOG_TIMEOUT = "Timeout waiting for response";
-	private static final String LOG_CIRCUIT_BREAKER_SEND = "Circuit breaker activated for sendTrainerWorkload. Error: {}";
-	private static final String LOG_CIRCUIT_BREAKER_GET = "Circuit breaker activated for getTrainerMonthlyWorkload. Error: {}";
-	private static final String LOG_UNKNOWN_TRANSACTION = "Received response for unknown transaction ID: {}";
-	private static final String LOG_ERROR_GETTING_WORKLOAD = "Error getting trainer monthly workload: {}";
-
-	private final JmsTemplate jmsTemplate;
-	private final JmsMetrics jmsMetrics;
+	private final SqsMessageTemplate sqsMessageTemplate;
+	private final SqsMetrics sqsMetrics; // Changed from JmsMetrics
 
 	private final ConcurrentHashMap<String, CompletableFuture<TrainerWorkloadResponseMessage>> pendingResponses = new ConcurrentHashMap<>();
 
@@ -63,8 +50,8 @@ public class TrainerWorkloadMessagingAdapter
 		String transactionId = ensureTransactionId();
 		Trainer trainer = training.getTrainer();
 
-		log.info("Transaction ID: {} - " + LOG_SENDING_WORKLOAD, transactionId, trainer.getUser().getUsername(),
-		        actionType);
+		log.info("Transaction ID: {} - Sending trainer workload message for trainer: {}, action: {}", transactionId,
+		        trainer.getUser().getUsername(), actionType);
 
 		TrainerWorkloadMessage message = createTrainerWorkloadMessage(training, trainer, actionType, transactionId);
 		sendMessage(message, transactionId);
@@ -76,7 +63,8 @@ public class TrainerWorkloadMessagingAdapter
 	public TrainerMonthlyWorkloadResponse getTrainerMonthlyWorkload(String username, int year, int month) {
 		String transactionId = ensureTransactionId();
 
-		log.info("Transaction ID: {} - " + LOG_GETTING_WORKLOAD, transactionId, username, year, month);
+		log.info("Transaction ID: {} - Getting monthly workload for trainer: {}, year: {}, month: {}", transactionId,
+		        username, year, month);
 
 		CompletableFuture<TrainerWorkloadResponseMessage> future = new CompletableFuture<>();
 		pendingResponses.put(transactionId, future);
@@ -86,8 +74,9 @@ public class TrainerWorkloadMessagingAdapter
 			sendGetWorkloadRequest(username, year, month, transactionId);
 			TrainerWorkloadResponseMessage response = waitForResponse(future, transactionId);
 
-			log.info("Transaction ID: {} - " + LOG_RECEIVED_WORKLOAD, transactionId, username,
-			        response.getSummaryDuration());
+			log.info(
+			        "Transaction ID: {} - Successfully received monthly workload for trainer: {}, summary duration: {}",
+			        transactionId, username, response.getSummaryDuration());
 
 			return mapToWorkloadResponse(response);
 		} catch (Exception e) {
@@ -95,7 +84,7 @@ public class TrainerWorkloadMessagingAdapter
 			throw new RuntimeException("Error getting trainer monthly workload", e);
 		} finally {
 			pendingResponses.remove(transactionId);
-			jmsMetrics.recordProcessingTime(System.currentTimeMillis() - startTime);
+			sqsMetrics.recordProcessingTime(System.currentTimeMillis() - startTime); // Changed from jmsMetrics
 		}
 	}
 
@@ -105,10 +94,11 @@ public class TrainerWorkloadMessagingAdapter
 		CompletableFuture<TrainerWorkloadResponseMessage> future = pendingResponses.get(transactionId);
 
 		if (future != null) {
-			jmsMetrics.recordMessageReceived();
+			sqsMetrics.recordMessageReceived(); // Changed from jmsMetrics
 			future.complete(response);
 		} else {
-			log.warn("Transaction ID: {} - " + LOG_UNKNOWN_TRANSACTION, transactionId, transactionId);
+			log.warn("Transaction ID: {} - Received response for unknown transaction ID: {}", transactionId,
+			        transactionId);
 		}
 	}
 
@@ -137,20 +127,24 @@ public class TrainerWorkloadMessagingAdapter
 		return expiredCount;
 	}
 
-	private void sendTrainerWorkloadFallback(Exception e) {
+	// Fallback methods
+	private void sendTrainerWorkloadFallback(Training training, ActionType actionType, Exception e) {
 		String transactionId = MDC.get("transactionId");
-		log.warn("Transaction ID: {} - " + LOG_CIRCUIT_BREAKER_SEND, transactionId, e.getMessage());
+		log.warn("Transaction ID: {} - Circuit breaker activated for sendTrainerWorkload. Error: {}", transactionId,
+		        e.getMessage());
 	}
 
 	private TrainerMonthlyWorkloadResponse getTrainerMonthlyWorkloadFallback(String username, int year, int month,
 	        Exception e) {
 		String transactionId = MDC.get("transactionId");
-		log.warn("Transaction ID: {} - " + LOG_CIRCUIT_BREAKER_GET, transactionId, e.getMessage());
+		log.warn("Transaction ID: {} - Circuit breaker activated for getTrainerMonthlyWorkload. Error: {}",
+		        transactionId, e.getMessage());
 
 		return TrainerMonthlyWorkloadResponse.builder().username(username).firstName("N/A").lastName("N/A")
 		        .isActive(true).year(year).month(month).summaryDuration(0).build();
 	}
 
+	// Private helper methods
 	private String ensureTransactionId() {
 		String transactionId = MDC.get("transactionId");
 		if (transactionId == null) {
@@ -173,15 +167,16 @@ public class TrainerWorkloadMessagingAdapter
 	private void sendMessage(TrainerWorkloadMessage message, String transactionId) {
 		long startTime = System.currentTimeMillis();
 		try {
-			jmsTemplate.convertAndSend(JmsConfig.TRAINER_WORKLOAD_QUEUE, message);
-			jmsMetrics.recordMessageSent();
-			log.info("Transaction ID: {} - " + LOG_SENT_SUCCESSFULLY, transactionId);
-		} catch (JmsException e) {
-			jmsMetrics.recordMessageFailed();
-			log.error("Transaction ID: {} - " + LOG_SEND_FAILED, transactionId, e.getMessage(), e);
+			sqsMessageTemplate.sendToTrainerWorkloadQueue(message);
+			sqsMetrics.recordMessageSent(); // Changed from jmsMetrics
+			log.info("Transaction ID: {} - Successfully sent trainer workload message", transactionId);
+		} catch (Exception e) {
+			sqsMetrics.recordMessageFailed(); // Changed from jmsMetrics
+			log.error("Transaction ID: {} - Failed to send trainer workload message: {}", transactionId, e.getMessage(),
+			        e);
 			throw e;
 		} finally {
-			jmsMetrics.recordProcessingTime(System.currentTimeMillis() - startTime);
+			sqsMetrics.recordProcessingTime(System.currentTimeMillis() - startTime); // Changed from jmsMetrics
 		}
 	}
 
@@ -189,8 +184,8 @@ public class TrainerWorkloadMessagingAdapter
 		TrainerWorkloadMessage message = TrainerWorkloadMessage.builder().username(username).year(year).month(month)
 		        .actionType(ActionType.GET).transactionId(transactionId).build();
 
-		jmsTemplate.convertAndSend(JmsConfig.TRAINER_WORKLOAD_QUEUE, message);
-		jmsMetrics.recordMessageSent();
+		sqsMessageTemplate.sendToTrainerWorkloadQueue(message);
+		sqsMetrics.recordMessageSent(); // Changed from jmsMetrics
 	}
 
 	private TrainerWorkloadResponseMessage waitForResponse(CompletableFuture<TrainerWorkloadResponseMessage> future,
@@ -199,18 +194,19 @@ public class TrainerWorkloadMessagingAdapter
 		try {
 			return future.get(RESPONSE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 		} catch (TimeoutException e) {
-			jmsMetrics.recordMessageFailed();
-			log.error("Transaction ID: {} - " + LOG_TIMEOUT, transactionId);
+			sqsMetrics.recordMessageFailed(); // Changed from jmsMetrics
+			log.error("Transaction ID: {} - Timeout waiting for response", transactionId);
 			throw e;
 		}
 	}
 
 	private void handleWorkloadRequestException(Exception e, String transactionId) {
-		jmsMetrics.recordMessageFailed();
+		sqsMetrics.recordMessageFailed(); // Changed from jmsMetrics
 		if (e instanceof TimeoutException) {
-			log.error("Transaction ID: - {} - " + LOG_TIMEOUT, transactionId);
+			log.error("Transaction ID: {} - Timeout waiting for response", transactionId);
 		} else {
-			log.error("Transaction ID: - {} - " + LOG_ERROR_GETTING_WORKLOAD, transactionId, e.getMessage(), e);
+			log.error("Transaction ID: {} - Error getting trainer monthly workload: {}", transactionId, e.getMessage(),
+			        e);
 		}
 	}
 
