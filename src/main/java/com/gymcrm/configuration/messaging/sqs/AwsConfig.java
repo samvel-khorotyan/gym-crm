@@ -10,14 +10,12 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AwsConfig {
-    @Value("${aws.region:eu-north-1}")
-    private String region;
-    
-    @Bean
-    public AmazonSQSAsync amazonSQSAsync() {
-        return AmazonSQSAsyncClientBuilder.standard()
-                .withRegion(Regions.fromName(region))
-                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-                .build();
-    }
+	@Value("${aws.region:eu-north-1}")
+	private String region;
+
+	@Bean
+	public AmazonSQSAsync amazonSQSAsync() {
+		return AmazonSQSAsyncClientBuilder.standard().withRegion(Regions.fromName(region))
+		        .withCredentials(DefaultAWSCredentialsProviderChain.getInstance()).build();
+	}
 }
